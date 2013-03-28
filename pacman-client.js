@@ -4,13 +4,17 @@
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   Sprite = (function() {
-    function Sprite(image, left, top, width, height) {
+    function Sprite(image, x, y, width, height) {
       this.image = image;
-      this.left = left;
-      this.top = top;
+      this.x = x;
+      this.y = y;
       this.width = width;
       this.height = height;
     }
+
+    Sprite.prototype.draw = function(ctx, x, y, width, height) {
+      return ctx.drawImage(this.image, this.x, this.y, this.width, this.height, x, y, width, height);
+    };
 
     return Sprite;
 
@@ -24,18 +28,16 @@
     function SpriteDict(spriteFile, infoFile, callback) {
       var _this = this;
 
-      $.getJSON(spriteFile, function(json) {
-        _this.sheet = json;
-        return _this.loaded(callback);
-      });
-      $.get(infoFile, function(image) {
-        _this.sprite = image;
+      this.sprite = new Image();
+      this.sprite.src = spriteFile;
+      $.getJSON(infoFile, function(json) {
+        _this.info = json;
         return _this.loaded(callback);
       });
     }
 
     SpriteDict.prototype.loaded = function(callback) {
-      if (!((this.sprite === void 0) || (this.info === void 0))) {
+      if (!((this.sprite === null) || (this.info === null))) {
         return callback();
       }
     };
@@ -44,7 +46,7 @@
       var spriteInfo;
 
       spriteInfo = this.info[name];
-      return new Sprite(this.sheet, spriteInfo.left, spriteInfo.top, spriteInfo.width, spriteInfo.height);
+      return new Sprite(this.sprite, spriteInfo.x, spriteInfo.y, spriteInfo.width, spriteInfo.height);
     };
 
     return SpriteDict;
@@ -73,6 +75,8 @@
 
     Game.prototype.interval = null;
 
+    Game.prototype.sprites = null;
+
     function Game(canvas) {
       this.canvas = canvas;
       this.createEntities = __bind(this.createEntities, this);
@@ -80,11 +84,9 @@
     }
 
     Game.prototype.setup = function() {
-      var sprites;
-
       this.canvas.height = this.HEIGHT;
       this.canvas.width = this.WIDTH;
-      return sprites = new SpriteDict('resources/spritesheet.png', 'resources/spritesheet.json', this.createEntities);
+      return this.sprites = new SpriteDict('resources/spritesheet.png', 'resources/spritesheet.json', this.createEntities);
     };
 
     Game.prototype.createEntities = function() {
@@ -103,11 +105,13 @@
     Game.prototype.update = function() {};
 
     Game.prototype.draw = function() {
-      var ctx;
+      var ctx, level_sprite;
 
       ctx = this.canvas.getContext('2d');
       ctx.fillStyle = '#000';
-      return ctx.fillRect(0, 0, this.WIDTH, this.HEIGHT);
+      ctx.fillRect(0, 0, this.WIDTH, this.HEIGHT);
+      level_sprite = this.sprites.get("level_blue");
+      return level_sprite.draw(ctx, 0, 0, this.WIDTH, this.HEIGHT);
     };
 
     return Game;
