@@ -16,6 +16,10 @@
       return ctx.drawImage(this.image, this.x, this.y, this.width, this.height, x, y, width, height);
     };
 
+    Sprite.prototype.drawScaled = function(ctx, x, y, scale) {
+      return ctx.drawImage(this.image, this.x, this.y, this.width, this.height, x * scale, y * scale, this.width * scale, this.height * scale);
+    };
+
     return Sprite;
 
   })();
@@ -67,9 +71,11 @@
   })();
 
   Game = (function() {
-    Game.prototype.WIDTH = 350;
+    Game.prototype.SCALE = 1;
 
-    Game.prototype.HEIGHT = 500;
+    Game.prototype.WIDTH = 170;
+
+    Game.prototype.HEIGHT = 40 + 215 + 20;
 
     Game.prototype.FPS = 30;
 
@@ -84,8 +90,8 @@
     }
 
     Game.prototype.setup = function() {
-      this.canvas.height = this.HEIGHT;
-      this.canvas.width = this.WIDTH;
+      this.canvas.height = this.HEIGHT * this.SCALE;
+      this.canvas.width = this.WIDTH * this.SCALE;
       return this.sprites = new SpriteDict('resources/spritesheet.png', 'resources/spritesheet.json', this.createEntities);
     };
 
@@ -109,9 +115,9 @@
 
       ctx = this.canvas.getContext('2d');
       ctx.fillStyle = '#000';
-      ctx.fillRect(0, 0, this.WIDTH, this.HEIGHT);
+      ctx.fillRect(0, 0, this.WIDTH * this.SCALE, this.HEIGHT * this.SCALE);
       level_sprite = this.sprites.get("level_blue");
-      return level_sprite.draw(ctx, 0, 0, this.WIDTH, this.HEIGHT);
+      return level_sprite.drawScaled(ctx, 0, 40, this.SCALE);
     };
 
     return Game;

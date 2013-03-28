@@ -4,6 +4,10 @@ class Sprite
   draw: (ctx, x, y, width, height) ->
     ctx.drawImage @image, @x, @y, @width, @height, x, y, width, height
 
+  drawScaled: (ctx, x, y, scale) ->
+    ctx.drawImage @image, @x, @y, @width, @height, x*scale, y*scale, @width*scale, @height*scale
+
+
 
 class SpriteDict
   sprite: null
@@ -31,9 +35,10 @@ class Level
   constructor: (filename) ->
     $.get filename, (data) -> 
 
-class Game 
-  WIDTH: 350
-  HEIGHT: 500
+class Game
+  SCALE: 1
+  WIDTH: 170
+  HEIGHT: 40 + 215 + 20
   FPS: 30
   interval: null
   sprites: null
@@ -42,8 +47,8 @@ class Game
     @setup()
 
   setup: () ->
-    @canvas.height = @HEIGHT
-    @canvas.width = @WIDTH
+    @canvas.height = @HEIGHT*@SCALE
+    @canvas.width = @WIDTH*@SCALE
     @sprites = new SpriteDict 'resources/spritesheet.png',
                              'resources/spritesheet.json',
                              @createEntities
@@ -62,10 +67,9 @@ class Game
   draw: () ->
     ctx = @canvas.getContext('2d')
     ctx.fillStyle = '#000'
-    ctx.fillRect 0, 0, @WIDTH, @HEIGHT
+    ctx.fillRect 0, 0, @WIDTH*@SCALE, @HEIGHT*@SCALE
     level_sprite = @sprites.get("level_blue")
-    level_sprite.draw ctx, 0, 0, @WIDTH, @HEIGHT
-
+    level_sprite.drawScaled ctx, 0, 40, @SCALE
 
 canvas = document.getElementById('canvas')
 game = new Game(canvas)
