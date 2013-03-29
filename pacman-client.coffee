@@ -1,13 +1,8 @@
 class Sprite
   constructor: (@image, @x, @y, @width, @height) ->
-  
-  draw: (ctx, x, y, width, height) ->
-    ctx.drawImage @image, @x, @y, @width, @height, x, y, width, height
 
   drawScaled: (ctx, x, y, scale) ->
     ctx.drawImage @image, @x, @y, @width, @height, x*scale, y*scale, @width*scale, @height*scale
-
-
 
 class SpriteDict
   sprite: null
@@ -16,13 +11,7 @@ class SpriteDict
   constructor: (spriteFile, infoFile, callback) ->
     @sprite = new Image()
     @sprite.src = spriteFile
-    $.getJSON infoFile, (json) =>
-      @info = json
-      @loaded(callback)
-
-  loaded: (callback) ->
-    if not ((@sprite == null) or (@info == null))
-      callback()
+    $.getJSON infoFile, (json) => @info = json; callback()
 
   get: (name) ->
     spriteInfo = @info[name]
@@ -49,9 +38,7 @@ class Game
   setup: () ->
     @canvas.height = @HEIGHT*@SCALE
     @canvas.width = @WIDTH*@SCALE
-    @sprites = new SpriteDict 'resources/spritesheet.png',
-                             'resources/spritesheet.json',
-                             @createEntities
+    @sprites = new SpriteDict 'resources/spritesheet.png', 'resources/spritesheet.json', @createEntities
 
   createEntities: () =>
     @run()

@@ -36,15 +36,9 @@
       this.sprite.src = spriteFile;
       $.getJSON(infoFile, function(json) {
         _this.info = json;
-        return _this.loaded(callback);
+        return callback();
       });
     }
-
-    SpriteDict.prototype.loaded = function(callback) {
-      if (!((this.sprite === null) || (this.info === null))) {
-        return callback();
-      }
-    };
 
     SpriteDict.prototype.get = function(name) {
       var spriteInfo;
