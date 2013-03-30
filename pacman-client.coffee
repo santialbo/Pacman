@@ -32,9 +32,9 @@ class Level
       
 
 class Game
-  SCALE: 1
-  WIDTH: 170
-  HEIGHT: 40 + 215 + 20
+  SCALE: 2
+  WIDTH: 224
+  HEIGHT: 40 + 248 + 20
   FPS: 30
   interval: null
   sprites: null
@@ -74,7 +74,7 @@ class Game
   drawMaze: (ctx) ->
     ctx.fillStyle = '#000'
     ctx.fillRect 0, 0, @WIDTH*@SCALE, @HEIGHT*@SCALE
-    s = @sprites.get("maze_blue")
+    s = @sprites.get("maze")
     s.drawScaled ctx, 0, 40, @SCALE
 
   drawCookies: (ctx) ->

@@ -69,11 +69,11 @@
   })();
 
   Game = (function() {
-    Game.prototype.SCALE = 1;
+    Game.prototype.SCALE = 2;
 
-    Game.prototype.WIDTH = 170;
+    Game.prototype.WIDTH = 224;
 
-    Game.prototype.HEIGHT = 40 + 215 + 20;
+    Game.prototype.HEIGHT = 40 + 248 + 20;
 
     Game.prototype.FPS = 30;
 
@@ -132,7 +132,7 @@
 
       ctx.fillStyle = '#000';
       ctx.fillRect(0, 0, this.WIDTH * this.SCALE, this.HEIGHT * this.SCALE);
-      s = this.sprites.get("maze_blue");
+      s = this.sprites.get("maze");
       return s.drawScaled(ctx, 0, 40, this.SCALE);
     };
 
