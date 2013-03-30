@@ -4,20 +4,23 @@
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   Sprite = (function() {
-    function Sprite(image, x, y, width, height) {
+    function Sprite(image, info) {
       this.image = image;
-      this.x = x;
-      this.y = y;
-      this.width = width;
-      this.height = height;
+      this.info = info;
     }
 
-    Sprite.prototype.draw = function(ctx, x, y, width, height) {
-      return ctx.drawImage(this.image, this.x, this.y, this.width, this.height, x, y, width, height);
+    Sprite.prototype.width = function() {
+      return this.info.sourceSize.w;
+    };
+
+    Sprite.prototype.height = function() {
+      return this.info.sourceSize.h;
     };
 
     Sprite.prototype.drawScaled = function(ctx, x, y, scale) {
-      return ctx.drawImage(this.image, this.x, this.y, this.width, this.height, x * scale, y * scale, this.width * scale, this.height * scale);
+      x += this.info.spriteSourceSize.x;
+      y += this.info.spriteSourceSize.y;
+      return ctx.drawImage(this.image, this.info.frame.x, this.info.frame.y, this.info.frame.w, this.info.frame.h, x * scale, y * scale, this.info.frame.w * scale, this.info.frame.h * scale);
     };
 
     return Sprite;
@@ -41,10 +44,7 @@
     }
 
     SpriteDict.prototype.get = function(name) {
-      var spriteInfo;
-
-      spriteInfo = this.info[name];
-      return new Sprite(this.sprite, spriteInfo.x, spriteInfo.y, spriteInfo.width, spriteInfo.height);
+      return new Sprite(this.sprite, this.info[name]);
     };
 
     return SpriteDict;
@@ -54,10 +54,14 @@
   Level = (function() {
     Level.prototype.entities = null;
 
-    Level.prototype.background = null;
+    Level.prototype.cookies = null;
 
-    function Level(filename) {
-      $.get(filename, function(data) {});
+    function Level(filename, callback) {
+      var _this = this;
+
+      $.get(filename, function(data) {
+        return callback();
+      });
     }
 
     return Level;
@@ -77,16 +81,27 @@
 
     Game.prototype.sprites = null;
 
+    Game.prototype.level = null;
+
     function Game(canvas) {
       this.canvas = canvas;
       this.createEntities = __bind(this.createEntities, this);
+      this.loadSprites = __bind(this.loadSprites, this);
       this.setup();
     }
 
     Game.prototype.setup = function() {
       this.canvas.height = this.HEIGHT * this.SCALE;
       this.canvas.width = this.WIDTH * this.SCALE;
-      return this.sprites = new SpriteDict('resources/spritesheet.png', 'resources/spritesheet.json', this.createEntities);
+      return this.loadLevel();
+    };
+
+    Game.prototype.loadLevel = function() {
+      return this.level = new Level('res/level', this.loadSprites);
+    };
+
+    Game.prototype.loadSprites = function() {
+      return this.sprites = new SpriteDict('res/sprites.png', 'res/sprites.json', this.createEntities);
     };
 
     Game.prototype.createEntities = function() {
@@ -105,14 +120,23 @@
     Game.prototype.update = function() {};
 
     Game.prototype.draw = function() {
-      var ctx, level_sprite;
+      var ctx;
 
       ctx = this.canvas.getContext('2d');
+      this.drawMaze(ctx);
+      return this.drawCookies(ctx);
+    };
+
+    Game.prototype.drawMaze = function(ctx) {
+      var s;
+
       ctx.fillStyle = '#000';
       ctx.fillRect(0, 0, this.WIDTH * this.SCALE, this.HEIGHT * this.SCALE);
-      level_sprite = this.sprites.get("level_blue");
-      return level_sprite.drawScaled(ctx, 0, 40, this.SCALE);
+      s = this.sprites.get("maze_blue");
+      return s.drawScaled(ctx, 0, 40, this.SCALE);
     };
+
+    Game.prototype.drawCookies = function(ctx) {};
 
     return Game;
 

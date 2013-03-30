@@ -1,8 +1,14 @@
 class Sprite
-  constructor: (@image, @x, @y, @width, @height) ->
+  constructor: (@image, @info) ->
+  
+  width: () -> @info.sourceSize.w
+  height: () -> @info.sourceSize.h
 
   drawScaled: (ctx, x, y, scale) ->
-    ctx.drawImage @image, @x, @y, @width, @height, x*scale, y*scale, @width*scale, @height*scale
+    x += @info.spriteSourceSize.x
+    y += @info.spriteSourceSize.y
+    ctx.drawImage @image, @info.frame.x, @info.frame.y, @info.frame.w,
+      @info.frame.h, x*scale, y*scale, @info.frame.w*scale, @info.frame.h*scale
 
 class SpriteDict
   sprite: null
@@ -14,15 +20,16 @@ class SpriteDict
     $.getJSON infoFile, (json) => @info = json; callback()
 
   get: (name) ->
-    spriteInfo = @info[name]
-    new Sprite(@sprite, spriteInfo.x, spriteInfo.y, spriteInfo.width, spriteInfo.height)
+    new Sprite(@sprite, @info[name])
 
 class Level
   entities: null
-  background: null
+  cookies: null
 
-  constructor: (filename) ->
-    $.get filename, (data) -> 
+  constructor: (filename, callback) ->
+    $.get filename, (data) => 
+      callback()
+      
 
 class Game
   SCALE: 1
@@ -31,6 +38,7 @@ class Game
   FPS: 30
   interval: null
   sprites: null
+  level: null
   
   constructor: (@canvas) ->
     @setup()
@@ -38,9 +46,16 @@ class Game
   setup: () ->
     @canvas.height = @HEIGHT*@SCALE
     @canvas.width = @WIDTH*@SCALE
-    @sprites = new SpriteDict 'resources/spritesheet.png', 'resources/spritesheet.json', @createEntities
+    @loadLevel()
+    
+  loadLevel: () ->
+    @level = new Level('res/level', @loadSprites)
+
+  loadSprites: () =>
+    @sprites = new SpriteDict 'res/sprites.png', 'res/sprites.json', @createEntities
 
   createEntities: () =>
+    
     @run()
 
   run: () ->
@@ -53,10 +68,18 @@ class Game
 
   draw: () ->
     ctx = @canvas.getContext('2d')
+    @drawMaze(ctx)
+    @drawCookies(ctx)
+
+  drawMaze: (ctx) ->
     ctx.fillStyle = '#000'
     ctx.fillRect 0, 0, @WIDTH*@SCALE, @HEIGHT*@SCALE
-    level_sprite = @sprites.get("level_blue")
-    level_sprite.drawScaled ctx, 0, 40, @SCALE
+    s = @sprites.get("maze_blue")
+    s.drawScaled ctx, 0, 40, @SCALE
+
+  drawCookies: (ctx) ->
+
+    
 
 canvas = document.getElementById('canvas')
 game = new Game(canvas)
