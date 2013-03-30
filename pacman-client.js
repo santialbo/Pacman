@@ -54,12 +54,15 @@
   Level = (function() {
     Level.prototype.entities = null;
 
-    Level.prototype.cookies = null;
+    Level.prototype.cells = null;
 
     function Level(filename, callback) {
       var _this = this;
 
       $.get(filename, function(data) {
+        _this.cells = (data.split("\n")).map(function(row) {
+          return row.split("");
+        });
         return callback();
       });
     }
@@ -136,7 +139,37 @@
       return s.drawScaled(ctx, 0, 40, this.SCALE);
     };
 
-    Game.prototype.drawCookies = function(ctx) {};
+    Game.prototype.drawCookies = function(ctx) {
+      var b, cols, i, j, l, p, r, rows, s, t, _i, _results;
+
+      s = this.sprites.get("cookie");
+      p = this.sprites.get("pill");
+      l = 4;
+      t = 5;
+      b = 268;
+      r = 221;
+      rows = this.level.cells.length;
+      cols = this.level.cells[0].length;
+      _results = [];
+      for (i = _i = 0; _i < rows; i = _i += 1) {
+        _results.push((function() {
+          var _j, _results1;
+
+          _results1 = [];
+          for (j = _j = 0; _j < cols; j = _j += 1) {
+            if (this.level.cells[i][j] === "o") {
+              _results1.push(s.drawScaled(ctx, l + (r - l) * j / (cols - 1), 40 + (t + (b - t) * i / (rows - 1)), this.SCALE));
+            } else if (this.level.cells[i][j] === "O") {
+              _results1.push(p.drawScaled(ctx, l + (r - l) * j / (cols - 1), 40 + (t + (b - t) * i / (rows - 1)), this.SCALE));
+            } else {
+              _results1.push(void 0);
+            }
+          }
+          return _results1;
+        }).call(this));
+      }
+      return _results;
+    };
 
     return Game;
 

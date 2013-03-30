@@ -24,10 +24,11 @@ class SpriteDict
 
 class Level
   entities: null
-  cookies: null
+  cells: null
 
   constructor: (filename, callback) ->
     $.get filename, (data) => 
+      @cells = (data.split "\n").map (row) -> row.split ""
       callback()
       
 
@@ -78,8 +79,17 @@ class Game
     s.drawScaled ctx, 0, 40, @SCALE
 
   drawCookies: (ctx) ->
-
-    
+    s = @sprites.get("cookie")
+    p = @sprites.get("pill")
+    l = 4; t = 5; b = 268; r = 221 # manually calibrated
+    rows = @level.cells.length
+    cols = @level.cells[0].length
+    for i in [0...rows] by 1
+      for j in [0...cols] by 1
+        if @level.cells[i][j] == "o"
+          s.drawScaled ctx, (l+(r-l)*j/(cols-1)), 40+(t+(b-t)*i/(rows-1)), @SCALE
+        else if @level.cells[i][j] == "O"
+          p.drawScaled ctx, (l+(r-l)*j/(cols-1)), 40+(t+(b-t)*i/(rows-1)), @SCALE
 
 canvas = document.getElementById('canvas')
 game = new Game(canvas)
