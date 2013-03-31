@@ -33,10 +33,12 @@ class Level
       
 
 class Game
-  SCALE: 2
+  SCALE: 1.5
   WIDTH: 224
   HEIGHT: 40 + 248 + 20
   FPS: 30
+  SERVER: "ws://localhost:8888/pacman"
+  connection: null
   interval: null
   sprites: null
   level: null
@@ -48,6 +50,10 @@ class Game
     @canvas.height = @HEIGHT*@SCALE
     @canvas.width = @WIDTH*@SCALE
     @loadLevel()
+
+  connect: () ->
+    @connection = new WebSocket(@SERVER)
+    @connection.onopen = @run
     
   loadLevel: () ->
     @level = new Level('res/level', @loadSprites)
@@ -56,10 +62,9 @@ class Game
     @sprites = new SpriteDict 'res/sprites.png', 'res/sprites.json', @createEntities
 
   createEntities: () =>
-    
-    @run()
+    @connect()
 
-  run: () ->
+  run: () =>
     @interval = setInterval =>
         @update()
         @draw()

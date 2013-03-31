@@ -72,13 +72,17 @@
   })();
 
   Game = (function() {
-    Game.prototype.SCALE = 2;
+    Game.prototype.SCALE = 1.5;
 
     Game.prototype.WIDTH = 224;
 
     Game.prototype.HEIGHT = 40 + 248 + 20;
 
     Game.prototype.FPS = 30;
+
+    Game.prototype.SERVER = "ws://localhost:8888/pacman";
+
+    Game.prototype.connection = null;
 
     Game.prototype.interval = null;
 
@@ -88,6 +92,7 @@
 
     function Game(canvas) {
       this.canvas = canvas;
+      this.run = __bind(this.run, this);
       this.createEntities = __bind(this.createEntities, this);
       this.loadSprites = __bind(this.loadSprites, this);
       this.setup();
@@ -99,6 +104,11 @@
       return this.loadLevel();
     };
 
+    Game.prototype.connect = function() {
+      this.connection = new WebSocket(this.SERVER);
+      return this.connection.onopen = this.run;
+    };
+
     Game.prototype.loadLevel = function() {
       return this.level = new Level('res/level', this.loadSprites);
     };
@@ -108,7 +118,7 @@
     };
 
     Game.prototype.createEntities = function() {
-      return this.run();
+      return this.connect();
     };
 
     Game.prototype.run = function() {
