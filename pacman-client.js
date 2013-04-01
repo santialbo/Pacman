@@ -178,7 +178,7 @@
   })();
 
   Game = (function() {
-    Game.prototype.SCALE = 1;
+    Game.prototype.SCALE = 2;
 
     Game.prototype.WIDTH = 232;
 
@@ -253,15 +253,19 @@
     };
 
     Game.prototype.runWaitingRoom = function() {
-      var _this = this;
+      var color, i, _i, _j, _len, _ref,
+        _this = this;
 
       this.animationsPool["pacman_right"] = this.animations.get("pacman_right");
       this.animationsPool["pacman_left"] = this.animations.get("pacman_left");
-      this.animationsPool["ghost_red_right"] = this.animations.get("ghost_red_right");
-      this.animationsPool["ghost_blue_right"] = this.animations.get("ghost_blue_right");
-      this.animationsPool["ghost_pink_right"] = this.animations.get("ghost_pink_right");
-      this.animationsPool["ghost_orange_right"] = this.animations.get("ghost_orange_right");
-      this.animationsPool["ghost_dead_blue"] = this.animations.get("ghost_dead_blue");
+      _ref = ["red", "blue", "pink", "orange"];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        color = _ref[_i];
+        this.animationsPool["ghost_" + color + "_right"] = this.animations.get("ghost_" + color + "_right");
+      }
+      for (i = _j = 0; _j < 4; i = ++_j) {
+        this.animationsPool["ghost_dead_blue_" + i] = this.animations.get("ghost_dead_blue");
+      }
       return this.interval = setInterval(function() {
         return _this.drawWaitingRoom();
       }, 1000 / this.FPS);
@@ -288,9 +292,9 @@
       y = 60;
       s.draw(ctx, this.WIDTH / 2 - s.width() / 2, y);
       y += s.height() + 10;
-      if (this.time() % 2000 > 1200) {
-        t = new SpriteTextDrawer(this.sprites);
-        t.drawText(ctx, "waiting for players", this.WIDTH / 2, y, "center");
+      t = new SpriteTextDrawer(this.sprites);
+      t.drawText(ctx, "waiting for players", this.WIDTH / 2, y, "center");
+      if (this.time() % 2000 < 1200) {
         y += 20;
         t.drawText(ctx, this.state.players + " of 5", this.WIDTH / 2, y, "center");
       }
@@ -304,9 +308,9 @@
         this.animationsPool["ghost_" + color + "_right"].requestSprite().draw(ctx, x, y);
         x -= 18;
       }
-      x = (7500 - this.time() % 10000) / 3000 * (this.WIDTH + 20);
+      x = (7800 - this.time() % 10000) / 3000 * (this.WIDTH + 20);
       for (i = _j = 0; _j < 4; i = ++_j) {
-        this.animationsPool["ghost_dead_blue"].requestSprite().draw(ctx, x, y);
+        this.animationsPool["ghost_dead_blue_" + i].requestSprite().draw(ctx, x, y);
         x += 18;
       }
       x += 60;

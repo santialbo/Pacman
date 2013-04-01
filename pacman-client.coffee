@@ -79,7 +79,7 @@ class SpriteAnimationDict
     new SpriteAnimation(sprites, @info[name].times, @fps)
 
 class Game
-  SCALE: 1
+  SCALE: 2
   WIDTH: 232
   HEIGHT: 40 + 248 + 20
   FPS: 30
@@ -129,11 +129,11 @@ class Game
   runWaitingRoom: () =>
     @animationsPool["pacman_right"] = @animations.get("pacman_right")
     @animationsPool["pacman_left"] = @animations.get("pacman_left")
-    @animationsPool["ghost_red_right"] = @animations.get("ghost_red_right")
-    @animationsPool["ghost_blue_right"] = @animations.get("ghost_blue_right")
-    @animationsPool["ghost_pink_right"] = @animations.get("ghost_pink_right")
-    @animationsPool["ghost_orange_right"] = @animations.get("ghost_orange_right")
-    @animationsPool["ghost_dead_blue"] = @animations.get("ghost_dead_blue")
+    for color in ["red", "blue", "pink", "orange"]
+      @animationsPool["ghost_" + color + "_right"] =
+        @animations.get("ghost_" + color + "_right")
+    for i in [0...4]
+      @animationsPool["ghost_dead_blue_" + i] = @animations.get("ghost_dead_blue")
     @interval = setInterval =>
         @drawWaitingRoom()
     , (1000/@FPS)
@@ -155,9 +155,9 @@ class Game
     y = 60
     s.draw ctx, @WIDTH/2-s.width()/2, y
     y += s.height()+ 10
-    if @time()%2000 > 1200
-      t = new SpriteTextDrawer(@sprites)
-      t.drawText ctx, "waiting for players", @WIDTH/2, y , "center"
+    t = new SpriteTextDrawer(@sprites)
+    t.drawText ctx, "waiting for players", @WIDTH/2, y , "center"
+    if @time()%2000 < 1200
       y += 20
       t.drawText ctx, @state.players + " of 5", @WIDTH/2, y , "center"
     y = 200
@@ -167,9 +167,9 @@ class Game
     for color in ["red", "blue", "pink", "orange"]
       @animationsPool["ghost_" + color + "_right"].requestSprite().draw ctx, x, y
       x -= 18
-    x = (7500 - @time()%10000)/3000*(@WIDTH+20)
+    x = (7800 - @time()%10000)/3000*(@WIDTH+20)
     for i in [0...4]
-      @animationsPool["ghost_dead_blue"].requestSprite().draw ctx, x, y
+      @animationsPool["ghost_dead_blue_" + i].requestSprite().draw ctx, x, y
       x += 18
     x += 60
     @animationsPool["pacman_left"].requestSprite().draw ctx, x, y
