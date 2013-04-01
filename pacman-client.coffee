@@ -55,9 +55,10 @@ class Level
 class SpriteAnimation
   dt: 0
 
-  constructor: (@sprites, @times) ->
+  constructor: (@sprites, @times, @fps) ->
   
-  requestSprite: (dt) ->
+  requestSprite: () ->
+    dt = 1000/@fps
     if dt > @dt
       @sprites.splice(0, 0, @sprites.pop())
       @dt = @times.pop()
@@ -70,12 +71,12 @@ class SpriteAnimation
 class SpriteAnimationDict
   info: null
 
-  constructor: (@spriteDict, fileName, callback) ->
+  constructor: (@spriteDict, fileName, @fps, callback) ->
     $.getJSON fileName, (json) => @info = json; callback()
 
   get: (name) ->
     sprites = @info[name].sprites.map (sprite_name) => @spriteDict.get(sprite_name)
-    new SpriteAnimation(sprites, @info[name].times)
+    new SpriteAnimation(sprites, @info[name].times, @fps)
 
 class Game
   SCALE: 1
@@ -115,7 +116,7 @@ class Game
 
   loadAnimations: () =>
     @animations =
-      new SpriteAnimationDict @sprites, 'res/animations.json', @createEntities
+      new SpriteAnimationDict @sprites, 'res/animations.json', @FPS, @createEntities
 
   createEntities: () =>
     @connect()
@@ -127,6 +128,12 @@ class Game
 
   runWaitingRoom: () =>
     @animationsPool["pacman_right"] = @animations.get("pacman_right")
+    @animationsPool["pacman_left"] = @animations.get("pacman_left")
+    @animationsPool["ghost_red_right"] = @animations.get("ghost_red_right")
+    @animationsPool["ghost_blue_right"] = @animations.get("ghost_blue_right")
+    @animationsPool["ghost_pink_right"] = @animations.get("ghost_pink_right")
+    @animationsPool["ghost_orange_right"] = @animations.get("ghost_orange_right")
+    @animationsPool["ghost_dead_blue"] = @animations.get("ghost_dead_blue")
     @interval = setInterval =>
         @drawWaitingRoom()
     , (1000/@FPS)
@@ -153,10 +160,19 @@ class Game
       t.drawText ctx, "waiting for players", @WIDTH/2, y , "center"
       y += 20
       t.drawText ctx, @state.players + " of 5", @WIDTH/2, y , "center"
-    a = @animationsPool["pacman_right"].requestSprite(1000/@FPS)
     y = 200
-    x = -10 + (@time()%8000)/3000*(@WIDTH + 20)
-    a.draw ctx, x, y
+    x = -10 + (@time()%10000)/3000*(@WIDTH + 20)
+    @animationsPool["pacman_right"].requestSprite().draw ctx, x, y
+    x -= 60
+    for color in ["red", "blue", "pink", "orange"]
+      @animationsPool["ghost_" + color + "_right"].requestSprite().draw ctx, x, y
+      x -= 18
+    x = (7500 - @time()%10000)/3000*(@WIDTH+20)
+    for i in [0...4]
+      @animationsPool["ghost_dead_blue"].requestSprite().draw ctx, x, y
+      x += 18
+    x += 60
+    @animationsPool["pacman_left"].requestSprite().draw ctx, x, y
 
 
   runGame: () =>

@@ -124,12 +124,16 @@
   SpriteAnimation = (function() {
     SpriteAnimation.prototype.dt = 0;
 
-    function SpriteAnimation(sprites, times) {
+    function SpriteAnimation(sprites, times, fps) {
       this.sprites = sprites;
       this.times = times;
+      this.fps = fps;
     }
 
-    SpriteAnimation.prototype.requestSprite = function(dt) {
+    SpriteAnimation.prototype.requestSprite = function() {
+      var dt;
+
+      dt = 1000 / this.fps;
       if (dt > this.dt) {
         this.sprites.splice(0, 0, this.sprites.pop());
         this.dt = this.times.pop();
@@ -148,10 +152,11 @@
   SpriteAnimationDict = (function() {
     SpriteAnimationDict.prototype.info = null;
 
-    function SpriteAnimationDict(spriteDict, fileName, callback) {
+    function SpriteAnimationDict(spriteDict, fileName, fps, callback) {
       var _this = this;
 
       this.spriteDict = spriteDict;
+      this.fps = fps;
       $.getJSON(fileName, function(json) {
         _this.info = json;
         return callback();
@@ -165,7 +170,7 @@
       sprites = this.info[name].sprites.map(function(sprite_name) {
         return _this.spriteDict.get(sprite_name);
       });
-      return new SpriteAnimation(sprites, this.info[name].times);
+      return new SpriteAnimation(sprites, this.info[name].times, this.fps);
     };
 
     return SpriteAnimationDict;
@@ -234,7 +239,7 @@
     };
 
     Game.prototype.loadAnimations = function() {
-      return this.animations = new SpriteAnimationDict(this.sprites, 'res/animations.json', this.createEntities);
+      return this.animations = new SpriteAnimationDict(this.sprites, 'res/animations.json', this.FPS, this.createEntities);
     };
 
     Game.prototype.createEntities = function() {
@@ -251,6 +256,12 @@
       var _this = this;
 
       this.animationsPool["pacman_right"] = this.animations.get("pacman_right");
+      this.animationsPool["pacman_left"] = this.animations.get("pacman_left");
+      this.animationsPool["ghost_red_right"] = this.animations.get("ghost_red_right");
+      this.animationsPool["ghost_blue_right"] = this.animations.get("ghost_blue_right");
+      this.animationsPool["ghost_pink_right"] = this.animations.get("ghost_pink_right");
+      this.animationsPool["ghost_orange_right"] = this.animations.get("ghost_orange_right");
+      this.animationsPool["ghost_dead_blue"] = this.animations.get("ghost_dead_blue");
       return this.interval = setInterval(function() {
         return _this.drawWaitingRoom();
       }, 1000 / this.FPS);
@@ -269,7 +280,7 @@
     };
 
     Game.prototype.drawWaitingRoom = function() {
-      var a, ctx, s, t, x, y;
+      var color, ctx, i, s, t, x, y, _i, _j, _len, _ref;
 
       ctx = this.canvas.getContext('2d');
       ctx.fillRect(0, 0, this.WIDTH * this.SCALE, this.HEIGHT * this.SCALE);
@@ -283,10 +294,23 @@
         y += 20;
         t.drawText(ctx, this.state.players + " of 5", this.WIDTH / 2, y, "center");
       }
-      a = this.animationsPool["pacman_right"].requestSprite(1000 / this.FPS);
       y = 200;
-      x = -10 + (this.time() % 8000) / 3000 * (this.WIDTH + 20);
-      return a.draw(ctx, x, y);
+      x = -10 + (this.time() % 10000) / 3000 * (this.WIDTH + 20);
+      this.animationsPool["pacman_right"].requestSprite().draw(ctx, x, y);
+      x -= 60;
+      _ref = ["red", "blue", "pink", "orange"];
+      for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+        color = _ref[_i];
+        this.animationsPool["ghost_" + color + "_right"].requestSprite().draw(ctx, x, y);
+        x -= 18;
+      }
+      x = (7500 - this.time() % 10000) / 3000 * (this.WIDTH + 20);
+      for (i = _j = 0; _j < 4; i = ++_j) {
+        this.animationsPool["ghost_dead_blue"].requestSprite().draw(ctx, x, y);
+        x += 18;
+      }
+      x += 60;
+      return this.animationsPool["pacman_left"].requestSprite().draw(ctx, x, y);
     };
 
     Game.prototype.runGame = function() {
