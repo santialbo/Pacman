@@ -6,7 +6,7 @@ class Sprite
   width: () -> @info.sourceSize.w
   height: () -> @info.sourceSize.h
 
-  drawScaled: (ctx, x, y) ->
+  draw: (ctx, x, y) ->
     x += @info.spriteSourceSize.x
     y += @info.spriteSourceSize.y
     ctx.drawImage @image, @info.frame.x, @info.frame.y,
@@ -32,19 +32,15 @@ class SpriteTextDrawer
 
   constructor: (@spriteDict) ->
 
-  drawText: (ctx, text, x, y, halign, valign) ->
+  drawText: (ctx, text, x, y, align) ->
     sprites = (text.split "").map (letter) =>
       if letter == '.' then @spriteDict.get "dot" else @spriteDict.get letter
-    if halign != "left"
+    if align != "left"
       width = (sprites.map (s) -> s.width()).reduce (x, y) -> x + y
-      if halign == "center" then x-= width/2
+      if align == "center" then x-= width/2
       else x -= width
-    if valign == "middle"
-      y -= sprites[0].height()/2
-    else if valign == "bottom"
-      y -= sprites[0].height()/2
     for sprite in sprites
-      sprite.drawScaled ctx, x, y
+      sprite.draw ctx, x, y
       x += sprite.width()
 
 class Level
@@ -112,12 +108,15 @@ class Game
     ctx.fillRect 0, 0, @WIDTH*@SCALE, @HEIGHT*@SCALE
     s = @sprites.get("title")
     y = 60
-    s.drawScaled ctx, @WIDTH/2-s.width()/2, y
+    s.draw ctx, @WIDTH/2-s.width()/2, y
     y += s.height()+ 10
     m = (new Date()).getTime()
     if m%2000 > 1200
       t = new SpriteTextDrawer(@sprites)
-      t.drawText ctx, "waiting for other players", @WIDTH/2, y , "center", "top"
+      t.drawText ctx, "waiting for players", @WIDTH/2, y , "center"
+      y += 20
+      t.drawText ctx, @state.players + " of 5", @WIDTH/2, y , "center"
+
 
 
   runGame: () =>
@@ -137,7 +136,7 @@ class Game
     ctx.fillStyle = '#000'
     ctx.fillRect 0, 0, @WIDTH*@SCALE, @HEIGHT*@SCALE
     s = @sprites.get("maze")
-    s.drawScaled ctx, 4, 40, @SCALE
+    s.draw ctx, 4, 40, @SCALE
 
   drawCookies: (ctx) ->
     s = @sprites.get("cookie")
@@ -148,9 +147,9 @@ class Game
     for i in [0...rows] by 1
       for j in [0...cols] by 1
         if @level.cells[i][j] == "o"
-          s.drawScaled ctx, 4+(l+(r-l)*j/(cols-1)), 40+(t+(b-t)*i/(rows-1))
+          s.draw ctx, 4+(l+(r-l)*j/(cols-1)), 40+(t+(b-t)*i/(rows-1))
         else if @level.cells[i][j] == "O"
-          p.drawScaled ctx, 4+(l+(r-l)*j/(cols-1)), 40+(t+(b-t)*i/(rows-1))
+          p.draw ctx, 4+(l+(r-l)*j/(cols-1)), 40+(t+(b-t)*i/(rows-1))
 
 canvas = document.getElementById('canvas')
 game = new Game(canvas)

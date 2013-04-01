@@ -20,7 +20,7 @@
       return this.info.sourceSize.h;
     };
 
-    Sprite.prototype.drawScaled = function(ctx, x, y) {
+    Sprite.prototype.draw = function(ctx, x, y) {
       x += this.info.spriteSourceSize.x;
       y += this.info.spriteSourceSize.y;
       return ctx.drawImage(this.image, this.info.frame.x, this.info.frame.y, this.info.frame.w, this.info.frame.h, x * this.scale, y * this.scale, this.info.frame.w * this.scale, this.info.frame.h * this.scale);
@@ -65,7 +65,7 @@
       this.spriteDict = spriteDict;
     }
 
-    SpriteTextDrawer.prototype.drawText = function(ctx, text, x, y, halign, valign) {
+    SpriteTextDrawer.prototype.drawText = function(ctx, text, x, y, align) {
       var sprite, sprites, width, _i, _len, _results,
         _this = this;
 
@@ -76,27 +76,22 @@
           return _this.spriteDict.get(letter);
         }
       });
-      if (halign !== "left") {
+      if (align !== "left") {
         width = (sprites.map(function(s) {
           return s.width();
         })).reduce(function(x, y) {
           return x + y;
         });
-        if (halign === "center") {
+        if (align === "center") {
           x -= width / 2;
         } else {
           x -= width;
         }
       }
-      if (valign === "middle") {
-        y -= sprites[0].height() / 2;
-      } else if (valign === "bottom") {
-        y -= sprites[0].height() / 2;
-      }
       _results = [];
       for (_i = 0, _len = sprites.length; _i < _len; _i++) {
         sprite = sprites[_i];
-        sprite.drawScaled(ctx, x, y);
+        sprite.draw(ctx, x, y);
         _results.push(x += sprite.width());
       }
       return _results;
@@ -212,12 +207,14 @@
       ctx.fillRect(0, 0, this.WIDTH * this.SCALE, this.HEIGHT * this.SCALE);
       s = this.sprites.get("title");
       y = 60;
-      s.drawScaled(ctx, this.WIDTH / 2 - s.width() / 2, y);
+      s.draw(ctx, this.WIDTH / 2 - s.width() / 2, y);
       y += s.height() + 10;
       m = (new Date()).getTime();
       if (m % 2000 > 1200) {
         t = new SpriteTextDrawer(this.sprites);
-        return t.drawText(ctx, "waiting for other players", this.WIDTH / 2, y, "center", "top");
+        t.drawText(ctx, "waiting for players", this.WIDTH / 2, y, "center");
+        y += 20;
+        return t.drawText(ctx, this.state.players + " of 5", this.WIDTH / 2, y, "center");
       }
     };
 
@@ -246,7 +243,7 @@
       ctx.fillStyle = '#000';
       ctx.fillRect(0, 0, this.WIDTH * this.SCALE, this.HEIGHT * this.SCALE);
       s = this.sprites.get("maze");
-      return s.drawScaled(ctx, 4, 40, this.SCALE);
+      return s.draw(ctx, 4, 40, this.SCALE);
     };
 
     Game.prototype.drawCookies = function(ctx) {
@@ -268,9 +265,9 @@
           _results1 = [];
           for (j = _j = 0; _j < cols; j = _j += 1) {
             if (this.level.cells[i][j] === "o") {
-              _results1.push(s.drawScaled(ctx, 4 + (l + (r - l) * j / (cols - 1)), 40 + (t + (b - t) * i / (rows - 1))));
+              _results1.push(s.draw(ctx, 4 + (l + (r - l) * j / (cols - 1)), 40 + (t + (b - t) * i / (rows - 1))));
             } else if (this.level.cells[i][j] === "O") {
-              _results1.push(p.drawScaled(ctx, 4 + (l + (r - l) * j / (cols - 1)), 40 + (t + (b - t) * i / (rows - 1))));
+              _results1.push(p.draw(ctx, 4 + (l + (r - l) * j / (cols - 1)), 40 + (t + (b - t) * i / (rows - 1))));
             } else {
               _results1.push(void 0);
             }
