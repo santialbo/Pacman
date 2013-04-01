@@ -145,10 +145,16 @@
 
     Game.prototype.level = null;
 
+    Game.prototype.state = {};
+
+    Game.prototype.id = null;
+
     function Game(canvas) {
       this.canvas = canvas;
       this.runGame = __bind(this.runGame, this);
-      this.run = __bind(this.run, this);
+      this.drawWaitingRoom = __bind(this.drawWaitingRoom, this);
+      this.updateWaitingRoom = __bind(this.updateWaitingRoom, this);
+      this.runWaitingRoom = __bind(this.runWaitingRoom, this);
       this.createEntities = __bind(this.createEntities, this);
       this.loadSprites = __bind(this.loadSprites, this);
       this.setup();
@@ -158,11 +164,6 @@
       this.canvas.height = this.HEIGHT * this.SCALE;
       this.canvas.width = this.WIDTH * this.SCALE;
       return this.loadLevel();
-    };
-
-    Game.prototype.connect = function() {
-      this.connection = new WebSocket(this.SERVER);
-      return this.connection.onopen = this.run;
     };
 
     Game.prototype.loadLevel = function() {
@@ -178,8 +179,46 @@
       return this.connect();
     };
 
-    Game.prototype.run = function() {
-      return this.runGame();
+    Game.prototype.connect = function() {
+      this.connection = new WebSocket(this.SERVER);
+      this.connection.onmessage = this.updateWaitingRoom;
+      return this.connection.onopen = this.runWaitingRoom;
+    };
+
+    Game.prototype.runWaitingRoom = function() {
+      var _this = this;
+
+      return this.interval = setInterval(function() {
+        return _this.drawWaitingRoom();
+      }, 1000 / this.FPS);
+    };
+
+    Game.prototype.updateWaitingRoom = function(e) {
+      if (this.id === null) {
+        this.id = e.data;
+        return this.state.players = 1;
+      } else if (e.data === "5") {
+        clearInterval(this.interval);
+        return this.runGame();
+      } else {
+        return this.state.players = parseInt(e.data);
+      }
+    };
+
+    Game.prototype.drawWaitingRoom = function() {
+      var ctx, m, s, t, y;
+
+      ctx = this.canvas.getContext('2d');
+      ctx.fillRect(0, 0, this.WIDTH * this.SCALE, this.HEIGHT * this.SCALE);
+      s = this.sprites.get("title");
+      y = 60;
+      s.drawScaled(ctx, this.WIDTH / 2 - s.width() / 2, y);
+      y += s.height() + 10;
+      m = (new Date()).getTime();
+      if (m % 2000 > 1200) {
+        t = new SpriteTextDrawer(this.sprites);
+        return t.drawText(ctx, "waiting for other players", this.WIDTH / 2, y, "center", "top");
+      }
     };
 
     Game.prototype.runGame = function() {
@@ -187,13 +226,13 @@
 
       return this.interval = setInterval(function() {
         _this.update();
-        return _this.draw();
+        return _this.drawGame();
       }, 1000 / this.FPS);
     };
 
     Game.prototype.update = function() {};
 
-    Game.prototype.draw = function() {
+    Game.prototype.drawGame = function() {
       var ctx;
 
       ctx = this.canvas.getContext('2d');
@@ -202,14 +241,12 @@
     };
 
     Game.prototype.drawMaze = function(ctx) {
-      var s, t;
+      var s;
 
       ctx.fillStyle = '#000';
       ctx.fillRect(0, 0, this.WIDTH * this.SCALE, this.HEIGHT * this.SCALE);
       s = this.sprites.get("maze");
-      s.drawScaled(ctx, 4, 40, this.SCALE);
-      t = new SpriteTextDrawer(this.sprites);
-      return t.drawText(ctx, "hola", 10, 10, "left", "top");
+      return s.drawScaled(ctx, 4, 40, this.SCALE);
     };
 
     Game.prototype.drawCookies = function(ctx) {

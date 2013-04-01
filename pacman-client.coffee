@@ -66,6 +66,8 @@ class Game
   interval: null
   sprites: null
   level: null
+  state: {}
+  id: null
   
   constructor: (@canvas) ->
     @setup()
@@ -74,10 +76,6 @@ class Game
     @canvas.height = @HEIGHT*@SCALE
     @canvas.width = @WIDTH*@SCALE
     @loadLevel()
-
-  connect: () ->
-    @connection = new WebSocket(@SERVER)
-    @connection.onopen = @run
     
   loadLevel: () ->
     @level = new Level('res/level', @loadSprites)
@@ -89,18 +87,48 @@ class Game
   createEntities: () =>
     @connect()
 
-  run: () =>
-    @runGame()
+  connect: () ->
+    @connection = new WebSocket(@SERVER)
+    @connection.onmessage = @updateWaitingRoom
+    @connection.onopen = @runWaitingRoom
+
+  runWaitingRoom: () =>
+    @interval = setInterval =>
+        @drawWaitingRoom()
+    , (1000/@FPS)
+
+  updateWaitingRoom: (e) =>
+    if @id == null
+      @id = e.data
+      @state.players = 1
+    else if e.data == "5"
+      clearInterval @interval
+      @runGame()
+    else
+      @state.players = parseInt(e.data)
+
+  drawWaitingRoom: () =>
+    ctx = @canvas.getContext('2d')
+    ctx.fillRect 0, 0, @WIDTH*@SCALE, @HEIGHT*@SCALE
+    s = @sprites.get("title")
+    y = 60
+    s.drawScaled ctx, @WIDTH/2-s.width()/2, y
+    y += s.height()+ 10
+    m = (new Date()).getTime()
+    if m%2000 > 1200
+      t = new SpriteTextDrawer(@sprites)
+      t.drawText ctx, "waiting for other players", @WIDTH/2, y , "center", "top"
+
 
   runGame: () =>
     @interval = setInterval =>
         @update()
-        @draw()
+        @drawGame()
     , (1000/@FPS)
 
   update: () ->
 
-  draw: () ->
+  drawGame: () ->
     ctx = @canvas.getContext('2d')
     @drawMaze(ctx)
     @drawCookies(ctx)
@@ -110,8 +138,6 @@ class Game
     ctx.fillRect 0, 0, @WIDTH*@SCALE, @HEIGHT*@SCALE
     s = @sprites.get("maze")
     s.drawScaled ctx, 4, 40, @SCALE
-    t = new SpriteTextDrawer(@sprites)
-    t.drawText ctx, "hola", 10, 10, "left", "top"
 
   drawCookies: (ctx) ->
     s = @sprites.get("cookie")
