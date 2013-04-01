@@ -52,21 +52,53 @@ class Level
       @cells = (data.split "\n").map (row) -> row.split ""
       callback()
 
+class SpriteAnimation
+  dt: 0
+
+  constructor: (@sprites, @times) ->
+  
+  requestSprite: (dt) ->
+    if dt > @dt
+      @sprites.splice(0, 0, @sprites.pop())
+      @dt = @times.pop()
+      @times.splice(0, 0, @dt)
+      @requestSprite (dt - @dt)
+    else
+      @dt -= dt
+      return @sprites[@sprites.length - 1]
+
+class SpriteAnimationDict
+  info: null
+
+  constructor: (@spriteDict, fileName, callback) ->
+    $.getJSON fileName, (json) => @info = json; callback()
+
+  get: (name) ->
+    sprites = @info[name].sprites.map (sprite_name) => @spriteDict.get(sprite_name)
+    new SpriteAnimation(sprites, @info[name].times)
+
 class Game
   SCALE: 1
   WIDTH: 232
   HEIGHT: 40 + 248 + 20
   FPS: 30
   SERVER: "ws://localhost:8888/pacman"
+  initialTime: null
   connection: null
   interval: null
   sprites: null
+  animations: null
+  animationsPool: {}
   level: null
   state: {}
   id: null
   
   constructor: (@canvas) ->
+    @initialTime = new Date().getTime()
     @setup()
+  
+  time: () -> new Date().getTime() - @initialTime
+
 
   setup: () ->
     @canvas.height = @HEIGHT*@SCALE
@@ -77,8 +109,13 @@ class Game
     @level = new Level('res/level', @loadSprites)
 
   loadSprites: () =>
-    @sprites = new SpriteDict 'res/sprites.png', 'res/sprites.json', @createEntities
+    @sprites =
+      new SpriteDict 'res/sprites.png', 'res/sprites.json', @loadAnimations
     @sprites.setScale @SCALE
+
+  loadAnimations: () =>
+    @animations =
+      new SpriteAnimationDict @sprites, 'res/animations.json', @createEntities
 
   createEntities: () =>
     @connect()
@@ -89,6 +126,7 @@ class Game
     @connection.onopen = @runWaitingRoom
 
   runWaitingRoom: () =>
+    @animationsPool["pacman_right"] = @animations.get("pacman_right")
     @interval = setInterval =>
         @drawWaitingRoom()
     , (1000/@FPS)
@@ -110,13 +148,15 @@ class Game
     y = 60
     s.draw ctx, @WIDTH/2-s.width()/2, y
     y += s.height()+ 10
-    m = (new Date()).getTime()
-    if m%2000 > 1200
+    if @time()%2000 > 1200
       t = new SpriteTextDrawer(@sprites)
       t.drawText ctx, "waiting for players", @WIDTH/2, y , "center"
       y += 20
       t.drawText ctx, @state.players + " of 5", @WIDTH/2, y , "center"
-
+    a = @animationsPool["pacman_right"].requestSprite(1000/@FPS)
+    y = 200
+    x = -10 + (@time()%8000)/3000*(@WIDTH + 20)
+    a.draw ctx, x, y
 
 
   runGame: () =>

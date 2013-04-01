@@ -1,0 +1,7 @@
+{
+"pacman_right":
+{
+	"sprites": ["pacman", "pacman_right_1", "pacman_right_2"],
+	"times": [50, 50, 50]
+}
+}
