@@ -1,6 +1,6 @@
 class Sprite
-  scale: 1
-
+  # Sprite contains a reference to the spritesheet and the necessary
+  # information to draw the actual sprite
   constructor: (@image, @info, @scale) ->
   
   width: () -> @info.sourceSize.w
@@ -14,6 +14,8 @@ class Sprite
       x*@scale, y*@scale, @info.frame.w*@scale, @info.frame.h*@scale
 
 class SpriteDict
+  # SpriteDict is a dictionary with all the sprites in the sprites json file.
+  # It avoids the creation of multiple image objects by having only one.
   sprite: null
   info: null
   scale: 1
@@ -29,7 +31,6 @@ class SpriteDict
     new Sprite(@sprite, @info[name], @scale)
 
 class SpriteTextDrawer
-
   constructor: (@spriteDict) ->
 
   drawText: (ctx, text, x, y, align) ->
@@ -53,6 +54,8 @@ class Level
       callback()
 
 class SpriteAnimation
+  # SpriteAnimation handles repeating sprite animation. Every time a sprite
+  # is requested it updates the current state.
   dt: 0
 
   constructor: (@sprites, @times, @fps) ->
@@ -69,6 +72,8 @@ class SpriteAnimation
       return @sprites[@sprites.length - 1]
 
 class SpriteAnimationDict
+  # SpriteAnimationDict handles the creation of animations by reading the
+  # information from the animations.json file
   info: null
 
   constructor: (@spriteDict, fileName, @fps, callback) ->
@@ -100,7 +105,6 @@ class Game
   
   time: () -> new Date().getTime() - @initialTime
 
-
   setup: () ->
     @canvas.height = @HEIGHT*@SCALE
     @canvas.width = @WIDTH*@SCALE
@@ -122,11 +126,15 @@ class Game
     @connect()
 
   connect: () ->
+    # connect to server and proceed to the waiting room
     @connection = new WebSocket(@SERVER)
     @connection.onmessage = @updateWaitingRoom
     @connection.onopen = @runWaitingRoom
 
+  # Waiting screen
+
   runWaitingRoom: () =>
+    # load animations
     @animationsPool["pacman_right"] = @animations.get("pacman_right")
     @animationsPool["pacman_left"] = @animations.get("pacman_left")
     for color in ["red", "blue", "pink", "orange"]
@@ -134,6 +142,7 @@ class Game
         @animations.get("ghost_" + color + "_right")
     for i in [0...4]
       @animationsPool["ghost_dead_blue_" + i] = @animations.get("ghost_dead_blue")
+
     @interval = setInterval =>
         @drawWaitingRoom()
     , (1000/@FPS)
@@ -143,7 +152,6 @@ class Game
       @id = e.data
       @state.players = 1
     else if e.data == "5"
-      clearInterval @interval
       @runGame()
     else
       @state.players = parseInt(e.data)
@@ -174,8 +182,10 @@ class Game
     x += 60
     @animationsPool["pacman_left"].requestSprite().draw ctx, x, y
 
+  # Actual game
 
   runGame: () =>
+    clearInterval @interval
     @interval = setInterval =>
         @update()
         @drawGame()

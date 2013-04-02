@@ -4,8 +4,6 @@
     __bind = function(fn, me){ return function(){ return fn.apply(me, arguments); }; };
 
   Sprite = (function() {
-    Sprite.prototype.scale = 1;
-
     function Sprite(image, info, scale) {
       this.image = image;
       this.info = info;
@@ -276,7 +274,6 @@
         this.id = e.data;
         return this.state.players = 1;
       } else if (e.data === "5") {
-        clearInterval(this.interval);
         return this.runGame();
       } else {
         return this.state.players = parseInt(e.data);
@@ -320,6 +317,7 @@
     Game.prototype.runGame = function() {
       var _this = this;
 
+      clearInterval(this.interval);
       return this.interval = setInterval(function() {
         _this.update();
         return _this.drawGame();
