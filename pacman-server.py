@@ -37,6 +37,7 @@ class Game:
 
 
 class SocketHandler(websocket.WebSocketHandler):
+    games = []
     clients = {}
     waiting_clients = []
     running_games = []
