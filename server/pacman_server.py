@@ -31,54 +31,65 @@ class Level:
 
 class Game:
 
-    def __init__(self):
+    def __init__(self, players, server):
         self.pacman = Pacman()
         self.ghosts = [Ghost(), Ghost(), Ghost(), Ghost()]
 
 
-class SocketHandler(websocket.WebSocketHandler):
-    games = []
+class PacmanServer:
+    _instance = None
     clients = {}
-    waiting_clients = []
-    running_games = []
+    waiting_queue = []
+    games = {}
+
+    def __new__(cls, *args, **kwargs):
+        if not cls._instance:
+            cls._instance = super(PacmanServer, cls).__new__(
+                    cls, *args, **kwargs)
+        return cls._instance
+
+    def add_client(self, client):
+        client.id = str(uuid1())
+        print "new connection with id %s" % client.id
+        self.clients[client.id] = client
+        self.waiting_queue.append(client.id)
+        client.write_message(client.id)
+        self.check_players()
+
+    def del_client(self, client):
+        print 'connection closed %s' % client.id
+        del self.clients[client.id]
+        if client.id in self.waiting_queue:
+            self.waiting_queue.remove(client.id)
+            self.check_players()
+
+    def check_players(self):
+        num_players = len(self.waiting_queue)
+        for id in self.waiting_queue:
+            self.clients[id].write_message(str(num_players))
+        if num_players == 5: # Start game
+            players = self.waiting_queue[:5]
+            self.waiting_queue = self.waiting_queue [5:]
+            game = Game(players, self)
+            for player in players:
+                self.games[player] = game
+
+pacman_server = PacmanServer()
+
+class SocketHandler(websocket.WebSocketHandler):
 
     def open(self):
-        self.id = str(uuid1())
-        self.clients[self.id] = self
-        self.waiting_clients.append(self.id)
-        self.write_message(self.id)
-        self.check_players()
-        print "new connection with id %s" % self.id
+        pacman_server.add_client(self)
 
     def on_message(self, message):
         print 'message received %s' % message
 
     def on_close(self):
-        del self.clients[self.id]
-        if self.id in self.waiting_clients:
-            self.waiting_clients.remove(self.id)
-            self.check_players()
-        print 'connection closed %s' % self.id
+        pacman_server.del_client(self)
 
-    def check_players(self):
-        num_players = len(self.waiting_clients)
-        for id in self.waiting_clients:
-            self.send_message(id, str(num_players))
-        if num_players == 5:
-            start_game()
-
-    def start_game():
-        players = self.waiting_clients[:5]
-        self.waiting_clients = self.waiting_clients[5:]
-        
-    def send_message(self, id, msg):
-        self.clients[id].write_message(msg)
-
-app = web.Application([
-    (r"/pacman/?", SocketHandler),
-])
 
 if __name__ == "__main__":
+    app = web.Application([(r"/pacman/?", SocketHandler)])
     server = httpserver.HTTPServer(app)
     server.listen(8888)
     ioloop.IOLoop.instance().start()
