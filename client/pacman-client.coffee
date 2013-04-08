@@ -84,7 +84,7 @@ class SpriteAnimationDict
     new SpriteAnimation(sprites, @info[name].times, @fps)
 
 class Game
-  SCALE: 2
+  SCALE: 1
   WIDTH: 232
   HEIGHT: 40 + 248 + 20
   FPS: 30
@@ -128,7 +128,7 @@ class Game
   connect: () ->
     # connect to server and proceed to the waiting room
     @connection = new WebSocket(@SERVER)
-    @connection.onmessage = @updateWaitingRoom
+    @connection.onmessage = @waitingRoomMsg
     @connection.onopen = @runWaitingRoom
 
   # Waiting screen
@@ -147,14 +147,14 @@ class Game
         @drawWaitingRoom()
     , (1000/@FPS)
 
-  updateWaitingRoom: (e) =>
+  waitingRoomMsg: (e) =>
     if @id == null
       @id = e.data
       @state.players = 1
-    else if e.data == "5"
-      @runGame()
     else
       @state.players = parseInt(e.data)
+
+    if @state.players == 5 then @runGame()
 
   drawWaitingRoom: () =>
     ctx = @canvas.getContext('2d')
@@ -186,10 +186,50 @@ class Game
 
   runGame: () =>
     clearInterval @interval
+    @connection.onmessage = @gameMsg
+    @hookKeys()
     @interval = setInterval =>
         @update()
         @drawGame()
     , (1000/@FPS)
+
+  gameMsg: (e) =>
+
+
+  hookKeys: () =>
+    @state.keys = {left: null, up: null, right: null, down: null}
+    window.onkeyup = (e) =>
+      switch e.keyCode
+        when 37, 65
+          @state.keys.left = false
+          @connection.send(JSON.stringify @state.keys)
+        when 38, 87
+          @state.keys.up = false
+          @connection.send(JSON.stringify @state.keys)
+        when 39, 68
+          @state.keys.right = false
+          @connection.send(JSON.stringify @state.keys)
+        when 40, 83
+          @state.keys.down = false
+          @connection.send(JSON.stringify @state.keys)
+    window.onkeydown = (e) =>
+      switch e.keyCode
+        when 37, 65
+          if not @state.keys.left
+            @state.keys.left = true
+            @connection.send(JSON.stringify @state.keys)
+        when 38, 87
+          if not @state.keys.up
+            @state.keys.up = true
+            @connection.send(JSON.stringify @state.keys)
+        when 39, 68
+          if not @state.keys.right
+            @state.keys.right = true
+            @connection.send(JSON.stringify @state.keys)
+        when 40, 83
+          if not @state.keys.down
+            @state.keys.down = true
+            @connection.send(JSON.stringify @state.keys)
 
   update: () ->
 

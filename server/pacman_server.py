@@ -82,7 +82,7 @@ class SocketHandler(websocket.WebSocketHandler):
         pacman_server.add_client(self)
 
     def on_message(self, message):
-        print 'message received %s' % message
+        print '%s -> %s' % (self.id, message)
 
     def on_close(self):
         pacman_server.del_client(self)
