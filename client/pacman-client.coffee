@@ -131,6 +131,9 @@ class Game
     @connection.onmessage = @waitingRoomMsg
     @connection.onopen = @runWaitingRoom
 
+  send: (description, obj) =>
+    @connection.send(JSON.stringify {label: description, data: obj})
+    
   # Waiting screen
 
   runWaitingRoom: () =>
@@ -202,34 +205,34 @@ class Game
       switch e.keyCode
         when 37, 65
           @state.keys.left = false
-          @connection.send(JSON.stringify @state.keys)
+          @send "keyEvent", @state.keys
         when 38, 87
           @state.keys.up = false
-          @connection.send(JSON.stringify @state.keys)
+          @send "keyEvent", @state.keys
         when 39, 68
           @state.keys.right = false
-          @connection.send(JSON.stringify @state.keys)
+          @send "keyEvent", @state.keys
         when 40, 83
           @state.keys.down = false
-          @connection.send(JSON.stringify @state.keys)
+          @send "keyEvent", @state.keys
     window.onkeydown = (e) =>
       switch e.keyCode
         when 37, 65
           if not @state.keys.left
             @state.keys.left = true
-            @connection.send(JSON.stringify @state.keys)
+            @send "keyEvent", @state.keys
         when 38, 87
           if not @state.keys.up
             @state.keys.up = true
-            @connection.send(JSON.stringify @state.keys)
+            @send "keyEvent", @state.keys
         when 39, 68
           if not @state.keys.right
             @state.keys.right = true
-            @connection.send(JSON.stringify @state.keys)
+            @send "keyEvent", @state.keys
         when 40, 83
           if not @state.keys.down
             @state.keys.down = true
-            @connection.send(JSON.stringify @state.keys)
+            @send "keyEvent", @state.keys
 
   update: () ->
 
