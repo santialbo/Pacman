@@ -34,8 +34,7 @@ class SpriteTextDrawer
   constructor: (@spriteDict) ->
 
   drawText: (ctx, text, x, y, align) ->
-    sprites = (text.split "").map (letter) =>
-      if letter == '.' then @spriteDict.get "dot" else @spriteDict.get letter
+    sprites = (text.split "").map (letter) => @spriteDict.get letter
     if align != "left"
       width = (sprites.map (s) -> s.width()).reduce (x, y) -> x + y
       if align == "center" then x-= width/2

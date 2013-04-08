@@ -239,7 +239,7 @@
 	"spriteSourceSize": {"x":1,"y":1,"w":2,"h":6},
 	"sourceSize": {"w":4,"h":8}
 },
-"dot":
+".":
 {
 	"frame": {"x":14,"y":2,"w":2,"h":3},
 	"spriteSourceSize": {"x":3,"y":5,"w":2,"h":3},
