@@ -2,36 +2,36 @@
 "pacman_right":
 {
 	"sprites": ["pacman", "pacman_right_1", "pacman_right_2"],
-	"times": [50, 50, 50]
+	"times": [75, 75, 75]
 },
 "pacman_left":
 {
 	"sprites": ["pacman", "pacman_left_1", "pacman_left_2"],
-	"times": [50, 50, 50]
+	"times": [75, 75, 75]
 },
 "ghost_dead_blue":
 {
 	"sprites": ["ghost_dead_blue_1", "ghost_dead_blue_2"],
-	"times": [75, 75]
+	"times": [175, 175]
 },
 "ghost_red_right":
 {
 	"sprites": ["ghost_red_right_1", "ghost_red_right_2"],
-	"times": [75, 75]
+	"times": [175, 175]
 },
 "ghost_blue_right":
 {
 	"sprites": ["ghost_blue_right_1", "ghost_blue_right_2"],
-	"times": [75, 75]
+	"times": [175, 175]
 },
 "ghost_pink_right":
 {
 	"sprites": ["ghost_pink_right_1", "ghost_pink_right_2"],
-	"times": [75, 75]
+	"times": [175, 175]
 },
 "ghost_orange_right":
 {
 	"sprites": ["ghost_orange_right_1", "ghost_orange_right_2"],
-	"times": [75, 75]
+	"times": [175, 175]
 }
 }
