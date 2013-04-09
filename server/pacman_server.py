@@ -2,6 +2,7 @@ from tornado import httpserver, websocket, ioloop, web
 from uuid import uuid1
 from random import shuffle
 import threading, time
+import os
 
 def enum(**enums):
     return type('Enum', (), enums)
@@ -48,7 +49,7 @@ class Game(threading.Thread):
 
     def __init__(self, clients):
         self.server = server
-        self.level = Level('level')
+        self.level = Level(os.path.join(os.path.dirname(__file__), 'level'))
         self.running = False
         self.assign_players(clients)
         super(Game, self).__init__()
@@ -65,15 +66,15 @@ class Game(threading.Thread):
         self.running = True
         while self.running:
             itime = time.time()
-            if self.all_offline(): break
+            if self.all_offline():
+                self.running = False
+                break
             print time.time()
             time.sleep(itime + 1 - time.time())
 
     def all_offline(self):
         actives = [ent.client.active for ent in self.entities]
-        if not any(actives):
-            self.running = False
-        
+        return not any(actives)        
 
 class PacmanServer:
     _instance = None
