@@ -1,6 +1,7 @@
 from tornado import httpserver, websocket, ioloop, web
 from uuid import uuid1
 from random import shuffle
+import json
 import threading, time
 import os
 
@@ -15,6 +16,8 @@ GhostColor = enum(RED = 0, BLUE = 1, ORANGE = 2, PINK = 3)
 class Entity(object):
 
     def __init__(self, client):
+        self.key_state = {'left': None, 'up': None, 'right': None, 'down': None}
+        self.is_pacman = None
         self.client = client
         self.position = (0.0, 0.0)
         self.moving = False
@@ -26,11 +29,13 @@ class Entity(object):
 class Pacman(Entity):
 
     def __init__(self, client):
+        self.is_pacman = True
         super(Pacman, self).__init__(client)
 
 class Ghost(Entity):
 
     def __init__(self, client, color):
+        self.is_pacman = False
         self.mode = GhostMode.NORMAL
         self.color = color
         self.active = False
@@ -54,6 +59,12 @@ class Game(threading.Thread):
         self.assign_players(clients)
         super(Game, self).__init__()
 
+    def player_by_id(self, id):
+        for ent in self.entities:
+            if ent.client.id == id:
+                return ent
+        return None
+
     def assign_players(self, clients):
         shuffle(clients)
         self.entities = [Pacman(clients[0]),
@@ -71,6 +82,11 @@ class Game(threading.Thread):
                 break
             print time.time()
             time.sleep(itime + 1 - time.time())
+
+    def handle_message(self, id, message_string):
+        message = json.loads(message_string)
+        if message['label'] == 'keyEvent':
+            self.player_by_id(id).key_state = message['data']
 
     def all_offline(self):
         actives = [ent.client.active for ent in self.entities]
@@ -103,8 +119,8 @@ class PacmanServer:
             self.waiting_queue.remove(client.id)
             self.check_players()
 
-    def message(self, id, message):
-        print '%s -> %s' % (id, message)
+    def handle_message(self, id, message):
+        self.games[id].handle_message(id, message)
 
     def check_players(self):
         num_players = len(self.waiting_queue)
@@ -127,7 +143,7 @@ class SocketHandler(websocket.WebSocketHandler):
         pacman_server.add_client(self)
 
     def on_message(self, message):
-        pacman_server.message(self.id, message)
+        pacman_server.handle_message(self.id, message)
 
     def on_close(self):
         self.active = False
