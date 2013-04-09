@@ -1,23 +1,39 @@
 from tornado import httpserver, websocket, ioloop, web
 from uuid import uuid1
+from random import shuffle
+import threading, time
 
-class Entity:
-    def __init__(self):
-        self.position = (0, 0)
-        self.facing = 0
+def enum(**enums):
+    return type('Enum', (), enums)
+
+Direction = enum(NONE = 0, LEFT = 1, UP = 2, RIGHT = 3, DOWN = 4)
+
+GhostMode = enum(NORMAL = 0, VULNERABLE = 1, DEAD = 2)
+GhostColor = enum(RED = 0, BLUE = 1, ORANGE = 2, PINK = 3)
+
+class Entity(object):
+
+    def __init__(self, client):
+        self.client = client
+        self.position = (0.0, 0.0)
         self.moving = False
+        self.speed = 10
+        self.facing = Direction.NONE
+        self.moving = Direction.NONE
 
 
 class Pacman(Entity):
-    def __init__(self):
-        return
 
+    def __init__(self, client):
+        super(Pacman, self).__init__(client)
 
 class Ghost(Entity):
 
-    def __init__(self):
-        self.vulnerable = False
-        self.alive = False
+    def __init__(self, client, color):
+        self.mode = GhostMode.NORMAL
+        self.color = color
+        self.active = False
+        super(Ghost, self).__init__(client)
 
 
 class Level:
@@ -26,15 +42,38 @@ class Level:
     def __init__(self, fname):
         with open(fname) as f:
             lines = f.readlines()
-        self.cells = [list(line[:-1]) for line in lines]
 
 
-class Game:
+class Game(threading.Thread):
 
-    def __init__(self, players, server):
-        self.pacman = Pacman()
-        self.ghosts = [Ghost(), Ghost(), Ghost(), Ghost()]
+    def __init__(self, clients):
+        self.server = server
+        self.level = Level('level')
+        self.running = False
+        self.assign_players(clients)
+        super(Game, self).__init__()
 
+    def assign_players(self, clients):
+        shuffle(clients)
+        self.entities = [Pacman(clients[0]),
+                         Ghost(clients[1], GhostColor.RED),
+                         Ghost(clients[2], GhostColor.BLUE),
+                         Ghost(clients[3], GhostColor.ORANGE),
+                         Ghost(clients[4], GhostColor.PINK)]
+
+    def run(self):
+        self.running = True
+        while self.running:
+            itime = time.time()
+            if self.all_offline(): break
+            print time.time()
+            time.sleep(itime + 1 - time.time())
+
+    def all_offline(self):
+        actives = [ent.client.active for ent in self.entities]
+        if not any(actives):
+            self.running = False
+        
 
 class PacmanServer:
     _instance = None
@@ -63,6 +102,9 @@ class PacmanServer:
             self.waiting_queue.remove(client.id)
             self.check_players()
 
+    def message(self, id, message):
+        print '%s -> %s' % (id, message)
+
     def check_players(self):
         num_players = len(self.waiting_queue)
         for id in self.waiting_queue:
@@ -70,21 +112,24 @@ class PacmanServer:
         if num_players == 5: # Start game
             players = self.waiting_queue[:5]
             self.waiting_queue = self.waiting_queue [5:]
-            game = Game(players, self)
+            game = Game([self.clients[id] for id in players])
             for player in players:
                 self.games[player] = game
+            game.start()
 
 pacman_server = PacmanServer()
 
 class SocketHandler(websocket.WebSocketHandler):
 
     def open(self):
+        self.active = True
         pacman_server.add_client(self)
 
     def on_message(self, message):
-        print '%s -> %s' % (self.id, message)
+        pacman_server.message(self.id, message)
 
     def on_close(self):
+        self.active = False
         pacman_server.del_client(self)
 
 
