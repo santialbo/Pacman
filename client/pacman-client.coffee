@@ -129,7 +129,6 @@ class Game
     @connection = new WebSocket(@SERVER)
     @connection.onmessage = @waitingRoomMsg
     @connection.onopen = @runWaitingRoom
-
   send: (description, obj) =>
     @connection.send(JSON.stringify {label: description, data: obj})
     
@@ -187,13 +186,27 @@ class Game
   # Actual game
 
   runGame: () =>
+    # setup
     clearInterval @interval
     @connection.onmessage = @gameMsg
     @hookKeys()
+    @initialTime = new Date().getTime()
+    @state.running = false
+    @preRunning()
+    setTimeout () =>
+      @state.running = true
+      @postRunning()
+    , 2000
     @interval = setInterval =>
         @update()
         @drawGame()
     , (1000/@FPS)
+
+  preRunning: () =>
+    @animationsPool["pill"] = @animations.get "pill_2"
+
+  postRunning: () =>
+    @animationsPool["pill"] = @animations.get "pill_1"
 
   gameMsg: (e) =>
 
@@ -235,11 +248,16 @@ class Game
 
   update: () ->
 
-  drawGame: () ->
+  drawGame: () =>
     ctx = @canvas.getContext('2d')
     @drawMaze(ctx)
     @drawCookies(ctx)
+    if not @state.running
+      t = new SpriteTextDrawer(@sprites)
+      t.drawText ctx, "ready!", @WIDTH/2, 177 , "center"
+    else
 
+      
   drawMaze: (ctx) ->
     ctx.fillStyle = '#000'
     ctx.fillRect 0, 0, @WIDTH*@SCALE, @HEIGHT*@SCALE
@@ -248,7 +266,7 @@ class Game
 
   drawCookies: (ctx) ->
     s = @sprites.get("cookie")
-    p = @sprites.get("pill")
+    p = @animationsPool["pill"].requestSprite()
     l = 4; t = 5; b = 252; r = 221 # manually calibrated
     rows = @level.cells.length
     cols = @level.cells[0].length

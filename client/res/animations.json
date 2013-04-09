@@ -33,5 +33,15 @@
 {
 	"sprites": ["ghost_orange_right_1", "ghost_orange_right_2"],
 	"times": [175, 175]
+},
+"pill_1":
+{
+	"sprites": ["pill", " "],
+	"times": [200, 200]
+},
+"pill_2":
+{
+	"sprites": ["pill"],
+	"times": [10000000]
 }
 }
