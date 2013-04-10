@@ -50,6 +50,7 @@ class Level
   constructor: (filename, callback) ->
     $.get filename, (data) => 
       @cells = (data.split "\n").map (row) -> row.split ""
+      @cells.pop()
       callback()
 
 class SpriteAnimation
@@ -267,7 +268,7 @@ class Game
   drawCookies: (ctx) ->
     s = @sprites.get("cookie")
     p = @animationsPool["pill"].requestSprite()
-    l = 4; t = 5; b = 252; r = 221 # manually calibrated
+    l = 4; t = 5; b = 244; r = 221 # manually calibrated
     rows = @level.cells.length
     cols = @level.cells[0].length
     for i in [0...rows] by 1
