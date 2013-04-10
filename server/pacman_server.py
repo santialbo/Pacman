@@ -32,6 +32,7 @@ class Pacman(Entity):
         self.is_pacman = True
         super(Pacman, self).__init__(client)
 
+
 class Ghost(Entity):
 
     def __init__(self, client, color):
@@ -56,6 +57,7 @@ class Game(threading.Thread):
         self.server = server
         self.level = Level(os.path.join(os.path.dirname(__file__), 'level'))
         self.running = False
+        self.dt = 1.0/30
         self.assign_players(clients)
         super(Game, self).__init__()
 
@@ -73,15 +75,31 @@ class Game(threading.Thread):
                          Ghost(clients[3], GhostColor.ORANGE),
                          Ghost(clients[4], GhostColor.PINK)]
 
+    def initialize_level(self):
+        self.entities[0].position = (13.5, 23)
+        self.entities[1].active = True
+        self.entities[1].position = (13.5, 11)
+        self.send_game_state()
+
+    def send_game_state(self):
+        for ent in self.entities:
+            if ent.client.active:
+                ent.client.write_message("hola")
+
     def run(self):
         self.running = True
+        self.initialize_level()
         while self.running:
             itime = time.time()
             if self.all_offline():
                 self.running = False
                 break
+            self.update()
             print time.time()
-            time.sleep(itime + 1 - time.time())
+            time.sleep(itime + self.dt - time.time())
+
+    def update(self):
+        self.send_game_state()
 
     def handle_message(self, id, message_string):
         message = json.loads(message_string)
