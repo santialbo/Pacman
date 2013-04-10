@@ -149,13 +149,13 @@ class Game
     , (1000/@FPS)
 
   waitingRoomMsg: (e) =>
-    if @id == null
-      @id = e.data
-      @state.players = 1
-    else
-      @state.players = parseInt(e.data)
-
-    if @state.players == 5 then @runGame()
+    msg = JSON.parse(e.data)
+    if msg.label == "id"
+      @id = msg.data
+    else if msg.label == "numPlayers"
+      @state.players = msg.data
+    else if msg.label == "runGame"
+      @runGame()
 
   drawWaitingRoom: () =>
     ctx = @canvas.getContext('2d')
@@ -209,7 +209,7 @@ class Game
     @animationsPool["pill"] = @animations.get "pill_1"
 
   gameMsg: (e) =>
-
+    console.log e.data
 
   hookKeys: () =>
     @state.keys = {left: null, up: null, right: null, down: null}

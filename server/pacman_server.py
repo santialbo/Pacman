@@ -79,16 +79,18 @@ class Game(threading.Thread):
         self.entities[0].position = (13.5, 23)
         self.entities[1].active = True
         self.entities[1].position = (13.5, 11)
-        self.send_game_state()
 
-    def send_game_state(self):
+    def publish(self, label, data = {}):
         for ent in self.entities:
             if ent.client.active:
-                ent.client.write_message("hola")
+                msg = {'label': label, 'data': data}
+                ent.client.write_message(json.dumps(msg))
 
     def run(self):
         self.running = True
         self.initialize_level()
+        time.sleep(1.0) # give time before starting
+        self.publish("runGame")
         while self.running:
             itime = time.time()
             if self.all_offline():
@@ -99,7 +101,7 @@ class Game(threading.Thread):
             time.sleep(itime + self.dt - time.time())
 
     def update(self):
-        self.send_game_state()
+        self.publish("gameState", {})
 
     def handle_message(self, id, message_string):
         message = json.loads(message_string)
@@ -120,7 +122,8 @@ class PacmanServer:
         print "new connection with id %s" % client.id
         self.clients[client.id] = client
         self.waiting_queue.append(client.id)
-        client.write_message(client.id)
+        msg = json.dumps({'label': "id", 'data': client.id})
+        client.write_message(msg)
         self.check_players()
 
     def del_client(self, client):
@@ -135,8 +138,9 @@ class PacmanServer:
 
     def check_players(self):
         num_players = len(self.waiting_queue)
+        msg = json.dumps({'label': "numPlayers", 'data': num_players})
         for id in self.waiting_queue:
-            self.clients[id].write_message(str(num_players))
+            self.clients[id].write_message(msg)
         if num_players == 5: # Start game
             players = self.waiting_queue[:5]
             self.waiting_queue = self.waiting_queue [5:]
