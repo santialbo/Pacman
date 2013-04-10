@@ -43,11 +43,11 @@ class Ghost(Entity):
 
 
 class Level:
-    cells = None
 
     def __init__(self, fname):
         with open(fname) as f:
             lines = f.readlines()
+        self.cells = [list(line[:-1]) for line in lines]
 
 
 class Game(threading.Thread):
