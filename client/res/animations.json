@@ -1,4 +1,9 @@
 {
+"pacman":
+{
+	"sprites": ["pacman"],
+	"times": [1000]
+},
 "pacman_right":
 {
 	"sprites": ["pacman", "pacman_right_1", "pacman_right_2"],
@@ -34,14 +39,9 @@
 	"sprites": ["ghost_orange_right_1", "ghost_orange_right_2"],
 	"times": [175, 175]
 },
-"pill_1":
+"pill":
 {
 	"sprites": ["pill", " "],
 	"times": [200, 200]
-},
-"pill_2":
-{
-	"sprites": ["pill"],
-	"times": [10000000]
 }
 }

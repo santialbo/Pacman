@@ -88,6 +88,8 @@ class Game
   WIDTH: 232
   HEIGHT: 40 + 248 + 20
   FPS: 30
+  ROWS: 31
+  COLS: 28
   SERVER: "ws://localhost:8888/pacman"
   initialTime: null
   connection: null
@@ -123,6 +125,7 @@ class Game
       new SpriteAnimationDict @sprites, 'res/animations.json', @FPS, @createEntities
 
   createEntities: () =>
+    @animationsPool["pill"] = @animations.get "pill"
     @connect()
 
   connect: () ->
@@ -155,7 +158,7 @@ class Game
       @id = msg.data
     else if msg.label == "numPlayers"
       @state.players = msg.data
-    else if msg.label == "runGame"
+    else if msg.label == "ready"
       @runGame()
 
   drawWaitingRoom: () =>
@@ -193,24 +196,19 @@ class Game
     @hookKeys()
     @initialTime = new Date().getTime()
     @state.running = false
-    @preRunning()
-    setTimeout () =>
-      @state.running = true
-      @postRunning()
-    , 2000
     @interval = setInterval =>
         @update()
         @drawGame()
     , (1000/@FPS)
 
-  preRunning: () =>
-    @animationsPool["pill"] = @animations.get "pill_2"
-
-  postRunning: () =>
-    @animationsPool["pill"] = @animations.get "pill_1"
-
   gameMsg: (e) =>
-    console.log e.data
+    msg = JSON.parse(e.data)
+    if msg.label == "go"
+      @state.running = true
+    else if msg.label == "gameState"
+      @level.cells = msg.data["level"]
+      @state.players = msg.data["players"]
+    
 
   hookKeys: () =>
     @state.keys = {left: null, up: null, right: null, down: null}
@@ -256,8 +254,26 @@ class Game
     if not @state.running
       t = new SpriteTextDrawer(@sprites)
       t.drawText ctx, "ready!", @WIDTH/2, 177 , "center"
-    else
+    @drawPlayers ctx
 
+  drawPlayers: (ctx) ->
+    dirs = {"0": "", "1": "_left", "2": "_up", "3": "_right", "4": "_down"}
+    for p in @state.players
+      if p.pacman
+        if p.facing > 0
+          animationName = "pacman" + dirs["" + p.facing]
+          s = @animationsPool[animationName].requestSprite()
+        else
+          s = @sprites.get("pacman")
+          console.log
+        @drawSpriteInPosition ctx, s, p.position[0], p.position[1]
+
+      
+  drawSpriteInPosition: (ctx, s, x, y) ->
+    l = 4; t = 5; b = 244; r = 221 # manually calibrated
+    x = Math.round(4+(l+(r-l)*x/(@COLS-1)) - s.width()/2)
+    y = Math.round(40+(t+(b-t)*y/(@ROWS-1)) - s.height()/2)
+    s.draw ctx, x, y
       
   drawMaze: (ctx) ->
     ctx.fillStyle = '#000'
@@ -267,16 +283,17 @@ class Game
 
   drawCookies: (ctx) ->
     s = @sprites.get("cookie")
-    p = @animationsPool["pill"].requestSprite()
-    l = 4; t = 5; b = 244; r = 221 # manually calibrated
-    rows = @level.cells.length
-    cols = @level.cells[0].length
-    for i in [0...rows] by 1
-      for j in [0...cols] by 1
-        if @level.cells[i][j] == "o"
-          s.draw ctx, 4+(l+(r-l)*j/(cols-1)), 40+(t+(b-t)*i/(rows-1))
-        else if @level.cells[i][j] == "O"
-          p.draw ctx, 4+(l+(r-l)*j/(cols-1)), 40+(t+(b-t)*i/(rows-1))
+    if @state.running
+      p = @animationsPool["pill"].requestSprite()
+    else
+      p = @sprites.get("pill")
+
+    for y in [0...@ROWS] by 1
+      for x in [0...@COLS] by 1
+        if @level.cells[y][x] == "o"
+          @drawSpriteInPosition ctx, s, x, y
+        else if @level.cells[y][x] == "O"
+          @drawSpriteInPosition ctx, p, x, y
 
 canvas = document.getElementById('canvas')
 game = new Game(canvas)

@@ -17,30 +17,49 @@ class Entity(object):
 
     def __init__(self, client):
         self.key_state = {'left': None, 'up': None, 'right': None, 'down': None}
-        self.is_pacman = None
+        self.is_pacman = False
         self.client = client
         self.position = (0.0, 0.0)
         self.moving = False
         self.speed = 10
         self.facing = Direction.NONE
-        self.moving = Direction.NONE
+
+    def state(self):
+        return {
+            'id': self.client.id,
+            'moving': self.moving,
+            'position': self.position,
+            'pacman': self.is_pacman,
+            'facing': self.facing
+        }
 
 
 class Pacman(Entity):
 
     def __init__(self, client):
-        self.is_pacman = True
         super(Pacman, self).__init__(client)
+        self.is_pacman = True
 
+    def state(self):
+        state = super(Pacman, self).state()
+        return state
+    
 
 class Ghost(Entity):
 
     def __init__(self, client, color):
+        super(Ghost, self).__init__(client)
         self.is_pacman = False
         self.mode = GhostMode.NORMAL
         self.color = color
         self.active = False
-        super(Ghost, self).__init__(client)
+    
+    def state(self):
+        state = super(Ghost, self).state()
+        state['mode'] = self.mode
+        state['color'] = self.color
+        state['active'] = self.active
+        return state
 
 
 class Level:
@@ -75,6 +94,9 @@ class Game(threading.Thread):
                          Ghost(clients[3], GhostColor.ORANGE),
                          Ghost(clients[4], GhostColor.PINK)]
 
+    def first_level(self):
+        self.score = 0
+
     def initialize_level(self):
         self.entities[0].position = (13.5, 23)
         self.entities[1].active = True
@@ -87,10 +109,14 @@ class Game(threading.Thread):
                 ent.client.write_message(json.dumps(msg))
 
     def run(self):
-        self.running = True
-        self.initialize_level()
         time.sleep(1.0) # give time before starting
-        self.publish("runGame")
+        self.running = True
+        self.first_level()
+        self.initialize_level()
+        self.publish("ready")
+        self.publish("gameState", self.game_state())
+        time.sleep(2.0) # give time before starting
+        self.publish("go")
         while self.running:
             itime = time.time()
             if self.all_offline():
@@ -101,7 +127,30 @@ class Game(threading.Thread):
             time.sleep(itime + self.dt - time.time())
 
     def update(self):
-        self.publish("gameState", {})
+        self.check_pacman()
+        ent = self.entities[0]
+        ent.facing = Direction.LEFT
+        if ent.position[0] > 0:
+            ent.position = (ent.position[0] - ent.speed*self.dt, ent.position[1])
+        self.publish("gameState", self.game_state())
+
+    def check_pacman(self):
+        pacman = self.entities[0]
+        x = int(round(pacman.position[0]))
+        y = int(round(pacman.position[1]))
+        if self.level.cells[y][x] == 'o':
+            self.level.cells[y][x] = ' '
+            self.score += 10
+        elif self.level.cells[y][x] == 'O':
+            self.level.cells[y][x] = ' '
+            self.score += 50
+
+    def game_state(self):
+        return {
+            'level': self.level.cells,
+            'score': self.score,
+            'players': [ent.state() for ent in self.entities]
+         }
 
     def handle_message(self, id, message_string):
         message = json.loads(message_string)
