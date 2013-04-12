@@ -87,7 +87,7 @@ class Game(threading.Thread):
         return None
 
     def assign_players(self, clients):
-        shuffle(clients)
+        #shuffle(clients)
         self.entities = [Pacman(clients[0]),
                          Ghost(clients[1], GhostColor.RED),
                          Ghost(clients[2], GhostColor.BLUE),
@@ -127,12 +127,23 @@ class Game(threading.Thread):
             time.sleep(itime + self.dt - time.time())
 
     def update(self):
+        dirs = ["left", "up", "right", "down"]
+        dx = [[-1, 0], [0, -1], [1, 0], [0, 1]]
         self.check_pacman()
-        ent = self.entities[0]
-        ent.facing = Direction.LEFT
-        if ent.position[0] > 0:
-            ent.position = (ent.position[0] - ent.speed*self.dt, ent.position[1])
+        for ent in self.entities:
+            for i in range(4):
+                if ent.key_state[dirs[i]]:
+                    ent.facing = i + 1
+                    self.move(ent, dx[i])
+
         self.publish("gameState", self.game_state())
+
+
+    def move(self, ent, dx):
+        x = ent.position[0] + dx[0]*ent.speed*self.dt
+        y = ent.position[1] + dx[1]*ent.speed*self.dt
+        ent.position = (x, y)
+
 
     def check_pacman(self):
         pacman = self.entities[0]

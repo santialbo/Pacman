@@ -4,14 +4,24 @@
 	"sprites": ["pacman"],
 	"times": [1000]
 },
+"pacman_left":
+{
+	"sprites": ["pacman", "pacman_left_1", "pacman_left_2"],
+	"times": [75, 75, 75]
+},
+"pacman_up":
+{
+	"sprites": ["pacman", "pacman_up_1", "pacman_up_2"],
+	"times": [75, 75, 75]
+},
 "pacman_right":
 {
 	"sprites": ["pacman", "pacman_right_1", "pacman_right_2"],
 	"times": [75, 75, 75]
 },
-"pacman_left":
+"pacman_down":
 {
-	"sprites": ["pacman", "pacman_left_1", "pacman_left_2"],
+	"sprites": ["pacman", "pacman_down_1", "pacman_down_2"],
 	"times": [75, 75, 75]
 },
 "ghost_dead_blue":
@@ -19,9 +29,34 @@
 	"sprites": ["ghost_dead_blue_1", "ghost_dead_blue_2"],
 	"times": [175, 175]
 },
+"ghost_red_left":
+{
+	"sprites": ["ghost_red_left_1", "ghost_red_left_2"],
+	"times": [175, 175]
+},
+"ghost_red_up":
+{
+	"sprites": ["ghost_red_up_1", "ghost_red_up_2"],
+	"times": [175, 175]
+},
 "ghost_red_right":
 {
 	"sprites": ["ghost_red_right_1", "ghost_red_right_2"],
+	"times": [175, 175]
+},
+"ghost_red_down":
+{
+	"sprites": ["ghost_red_down_1", "ghost_red_down_2"],
+	"times": [175, 175]
+},
+"ghost_blue_left":
+{
+	"sprites": ["ghost_blue_left_1", "ghost_blue_left_2"],
+	"times": [175, 175]
+},
+"ghost_blue_up":
+{
+	"sprites": ["ghost_blue_up_1", "ghost_blue_up_2"],
 	"times": [175, 175]
 },
 "ghost_blue_right":
@@ -29,14 +64,49 @@
 	"sprites": ["ghost_blue_right_1", "ghost_blue_right_2"],
 	"times": [175, 175]
 },
+"ghost_blue_down":
+{
+	"sprites": ["ghost_blue_down_1", "ghost_blue_down_2"],
+	"times": [175, 175]
+},
+"ghost_pink_left":
+{
+	"sprites": ["ghost_pink_left_1", "ghost_pink_left_2"],
+	"times": [175, 175]
+},
+"ghost_pink_up":
+{
+	"sprites": ["ghost_pink_up_1", "ghost_pink_up_2"],
+	"times": [175, 175]
+},
 "ghost_pink_right":
 {
 	"sprites": ["ghost_pink_right_1", "ghost_pink_right_2"],
 	"times": [175, 175]
 },
+"ghost_pink_down":
+{
+	"sprites": ["ghost_pink_down_1", "ghost_pink_down_2"],
+	"times": [175, 175]
+},
+"ghost_orange_left":
+{
+	"sprites": ["ghost_orange_left_1", "ghost_orange_left_2"],
+	"times": [175, 175]
+},
+"ghost_orange_up":
+{
+	"sprites": ["ghost_orange_up_1", "ghost_orange_up_2"],
+	"times": [175, 175]
+},
 "ghost_orange_right":
 {
 	"sprites": ["ghost_orange_right_1", "ghost_orange_right_2"],
+	"times": [175, 175]
+},
+"ghost_orange_down":
+{
+	"sprites": ["ghost_orange_down_1", "ghost_orange_down_2"],
 	"times": [175, 175]
 },
 "pill":

@@ -126,6 +126,19 @@ class Game
 
   createEntities: () =>
     @animationsPool["pill"] = @animations.get "pill"
+    #load animations
+    @animationsPool["pacman_left"] = @animations.get("pacman_left")
+    @animationsPool["pacman_up"] = @animations.get("pacman_up")
+    @animationsPool["pacman_right"] = @animations.get("pacman_right")
+    @animationsPool["pacman_down"] = @animations.get("pacman_down")
+
+    for c in ["red", "blue", "pink", "orange"]
+      for d in ["left", "up", "right", "down"]
+        name = "ghost_" + c + "_" + d
+        @animationsPool[name] = @animations.get(name)
+    for i in [0...4]
+      @animationsPool["ghost_dead_blue_" + i] = @animations.get("ghost_dead_blue")
+
     @connect()
 
   connect: () ->
@@ -139,14 +152,6 @@ class Game
   # Waiting screen
 
   runWaitingRoom: () =>
-    # load animations
-    @animationsPool["pacman_right"] = @animations.get("pacman_right")
-    @animationsPool["pacman_left"] = @animations.get("pacman_left")
-    for color in ["red", "blue", "pink", "orange"]
-      @animationsPool["ghost_" + color + "_right"] =
-        @animations.get("ghost_" + color + "_right")
-    for i in [0...4]
-      @animationsPool["ghost_dead_blue_" + i] = @animations.get("ghost_dead_blue")
 
     @interval = setInterval =>
         @drawWaitingRoom()
