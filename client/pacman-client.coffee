@@ -254,6 +254,7 @@ class Game
 
   drawPlayers: (ctx) ->
     d = ["left", "up", "right", "down"]
+    c = ["red", "blue", "orange", "pink"]
     for p in @state.players
       if p.pacman
         if p.facing == 0
@@ -262,8 +263,10 @@ class Game
           s = @animationsPool["pacman_" + d[p.facing + 1]].requestSprite()
         else
           s = @animationsPool["pacman_" + d[p.facing + 1]].peekSprite()
+      else
+        name = "ghost_" + c[p.color] + "_" + d[p.facing + 1]
+        s = @animationsPool[name].requestSprite()
         @drawSpriteInPosition ctx, s, p.position[0], p.position[1]
-
       
   drawSpriteInPosition: (ctx, s, x, y) ->
     l = 4; t = 5; b = 244; r = 221 # manually calibrated
