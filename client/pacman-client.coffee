@@ -75,6 +75,8 @@ class SpriteAnimation
       @dt -= dt
       return @sprites[@sprites.length - 1]
 
+  peekSprite: () -> @sprites[@sprites.length - 1]
+
 class AnimationDict
   # AnimationDict handles the creation of animations by reading the
   # information from the animations.json file
@@ -254,9 +256,12 @@ class Game
     d = ["left", "up", "right", "down"]
     for p in @state.players
       if p.pacman
-        if p.facing > 0
+        if p.facing == 0
+          s = @sprites.get("pacman")
+        else if p.moving
           s = @animationsPool["pacman_" + d[p.facing + 1]].requestSprite()
-        else s = @sprites.get("pacman")
+        else
+          s = @animationsPool["pacman_" + d[p.facing + 1]].peekSprite()
         @drawSpriteInPosition ctx, s, p.position[0], p.position[1]
 
       
