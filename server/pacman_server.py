@@ -53,6 +53,7 @@ class Ghost(Entity):
         self.mode = GhostMode.NORMAL
         self.color = color
         self.active = False
+        self.facing = Direction.UP
     
     def state(self):
         state = super(Ghost, self).state()
@@ -159,6 +160,7 @@ class Game(threading.Thread):
             x = ent.position[0] + dx[0]*ent.speed*self.dt
             y = (ent.position[1])
         ent.position = (x, y)
+        ent.moving = True
 
     def check_pacman(self):
         pacman = self.entities[0]

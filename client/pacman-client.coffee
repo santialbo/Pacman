@@ -145,7 +145,7 @@ class Game
   # Waiting screen
 
   runWaitingRoom: () =>
-    @interval = setInterval => @drawWaitingRoom(), (1000/FPS)
+    @interval = setInterval @drawWaitingRoom, (1000/FPS)
 
   waitingRoomMsg: (e) =>
     msg = JSON.parse(e.data)
@@ -260,13 +260,14 @@ class Game
         if p.facing == 0
           s = @sprites.get("pacman")
         else if p.moving
-          s = @animationsPool["pacman_" + d[p.facing + 1]].requestSprite()
+          s = @animationsPool["pacman_" + d[p.facing - 1]].requestSprite()
         else
-          s = @animationsPool["pacman_" + d[p.facing + 1]].peekSprite()
+          s = @animationsPool["pacman_" + d[p.facing - 1]].peekSprite()
       else
-        name = "ghost_" + c[p.color] + "_" + d[p.facing + 1]
+        name = "ghost_" + c[p.color] + "_" + d[p.facing - 1]
         s = @animationsPool[name].requestSprite()
-        @drawSpriteInPosition ctx, s, p.position[0], p.position[1]
+      @drawSpriteInPosition ctx, s, p.position[0], p.position[1]
+
       
   drawSpriteInPosition: (ctx, s, x, y) ->
     l = 4; t = 5; b = 244; r = 221 # manually calibrated
