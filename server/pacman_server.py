@@ -123,27 +123,42 @@ class Game(threading.Thread):
                 self.running = False
                 break
             self.update()
-            print time.time()
             time.sleep(itime + self.dt - time.time())
 
     def update(self):
-        dirs = ["left", "up", "right", "down"]
-        dx = [[-1, 0], [0, -1], [1, 0], [0, 1]]
         self.check_pacman()
         for ent in self.entities:
-            for i in range(4):
-                if ent.key_state[dirs[i]]:
-                    ent.facing = i + 1
-                    self.move(ent, dx[i])
-
+            self.update_ent(ent)
         self.publish("gameState", self.game_state())
 
-
+    def update_ent(self, ent):
+        dirs = ["left", "up", "right", "down"]
+        dx = [[-1, 0], [0, -1], [1, 0], [0, 1]]
+        for i in range(4):
+            if ent.key_state[dirs[i]]:
+                if not ent.is_pacman and (i + 1 - ent.facing + 4) % 4 == 2:
+                    # ghosts can't go back
+                    continue
+                x = int(round(ent.position[0])) + dx[i][0]
+                y = int(round(ent.position[1])) + dx[i][1]
+                if self.level.cells[y][x] != '#':
+                    ent.facing = i + 1
+                    break
+        x = int(round(ent.position[0] + 0.5*dx[ent.facing - 1][0]))
+        y = int(round(ent.position[1] + 0.5*dx[ent.facing - 1][1]))
+        if self.level.cells[y][x] != '#':
+            self.move(ent, dx[ent.facing - 1])
+        else:
+            self.position = (round(ent.position[0]), round(ent.position[1]))
+        
     def move(self, ent, dx):
-        x = ent.position[0] + dx[0]*ent.speed*self.dt
-        y = ent.position[1] + dx[1]*ent.speed*self.dt
+        if dx[0] == 0:
+            x = round(ent.position[0])
+            y = ent.position[1] + dx[1]*ent.speed*self.dt
+        else:
+            x = ent.position[0] + dx[0]*ent.speed*self.dt
+            y = (ent.position[1])
         ent.position = (x, y)
-
 
     def check_pacman(self):
         pacman = self.entities[0]
