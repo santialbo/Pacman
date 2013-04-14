@@ -21,7 +21,7 @@ class Entity(object):
         self.client = client
         self.position = (0.0, 0.0)
         self.moving = False
-        self.speed = 10
+        self.speed = 7
         self.facing = Direction.NONE
 
     def state(self):
