@@ -262,7 +262,7 @@ class Game
         else if p.moving
           s = @animationsPool["pacman_" + d[p.facing - 1]].requestSprite()
         else
-          s = @animationsPool["pacman_" + d[p.facing - 1]].peekSprite()
+          s = @sprites.get("pacman_" + d[p.facing - 1] + "_1")
       else
         name = "ghost_" + c[p.color] + "_" + d[p.facing - 1]
         s = @animationsPool[name].requestSprite()
