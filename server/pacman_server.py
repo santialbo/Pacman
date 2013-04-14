@@ -136,17 +136,20 @@ class Game(threading.Thread):
         self.publish("gameState", self.game_state())
 
     def update_ent(self, ent):
-        dirs = ["left", "up", "right", "down"]
-        for i in range(4):
+        dirs = ["", "left", "up", "right", "down"]
+        for i in range(1, 5):
             if ent.key_state[dirs[i]]:
-                if not ent.is_pacman and (i + 1 - ent.facing + 4) % 4 == 2:
+                if not ent.is_pacman and (i - ent.facing + 4) % 4 == 2:
                     # ghosts can't go back unless it's the only way
-                    left = ent.facing - 1 if ent.facing > 1 else 4
-                    right = ent.facing + 1 if ent.facing < 4 else 1
-                    if self.can_go(ent, left) or self.can_go(ent, right):
+                    j = i - 2 if i > 2 else i + 2
+                    left = j - 1 if j > 1 else 4
+                    right = j + 1 if j < 4 else 1
+                    if (self.can_go(ent, j) or
+                        self.can_go(ent, left) or
+                        self.can_go(ent, right)):
                         continue
-                if self.can_go(ent, i + 1):
-                    ent.facing = i + 1
+                if self.can_go(ent, i):
+                    ent.facing = i
                     break
         if ent.facing > 0:
             if self.can_go(ent, ent.facing):
