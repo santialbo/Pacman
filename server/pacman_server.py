@@ -102,6 +102,9 @@ class Game(threading.Thread):
         self.entities[0].position = (13.5, 23)
         self.entities[1].active = True
         self.entities[1].position = (13.5, 11)
+        self.entities[2].position = (12, 14)
+        self.entities[3].position = (13.5, 14)
+        self.entities[4].position = (15, 14)
 
     def publish(self, label, data = {}):
         for ent in self.entities:
