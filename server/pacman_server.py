@@ -137,8 +137,11 @@ class Game(threading.Thread):
         for i in range(4):
             if ent.key_state[dirs[i]]:
                 if not ent.is_pacman and (i + 1 - ent.facing + 4) % 4 == 2:
-                    # ghosts can't go back
-                    continue
+                    # ghosts can't go back unless it's the only way
+                    left = ent.facing - 1 if ent.facing > 1 else 4
+                    right = ent.facing + 1 if ent.facing < 4 else 1
+                    if self.can_go(ent, left) or self.can_go(ent, right):
+                        continue
                 if self.can_go(ent, i + 1):
                     ent.facing = i + 1
                     break
