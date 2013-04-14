@@ -140,17 +140,18 @@ class Game(threading.Thread):
                 if not ent.is_pacman and (i + 1 - ent.facing + 4) % 4 == 2:
                     # ghosts can't go back
                     continue
-                x = int(round(ent.position[0])) + dx[i][0]
-                y = int(round(ent.position[1])) + dx[i][1]
+                x = int(round(ent.position[0] + dx[i][0]))
+                y = int(round(ent.position[1] + dx[i][1]))
                 if self.level.cells[y][x] != '#':
                     ent.facing = i + 1
                     break
-        x = int(round(ent.position[0] + 0.5*dx[ent.facing - 1][0]))
-        y = int(round(ent.position[1] + 0.5*dx[ent.facing - 1][1]))
-        if self.level.cells[y][x] != '#':
-            self.move(ent, dx[ent.facing - 1])
-        else:
-            self.position = (round(ent.position[0]), round(ent.position[1]))
+        if ent.facing > 0:
+            x = int(round(ent.position[0] + 0.5*dx[ent.facing - 1][0]))
+            y = int(round(ent.position[1] + 0.5*dx[ent.facing - 1][1]))
+            if self.level.cells[y][x] != '#':
+                self.move(ent, dx[ent.facing - 1])
+            else:
+                self.position = (round(ent.position[0]), round(ent.position[1]))
         
     def move(self, ent, dx):
         if dx[0] == 0:
