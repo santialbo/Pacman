@@ -146,12 +146,13 @@ class Game(threading.Thread):
                     ent.facing = i + 1
                     break
         if ent.facing > 0:
-            x = int(round(ent.position[0] + 0.5*dx[ent.facing - 1][0]))
-            y = int(round(ent.position[1] + 0.5*dx[ent.facing - 1][1]))
+            x = int(round(ent.position[0] + dx[ent.facing - 1][0]))
+            y = int(round(ent.position[1] + dx[ent.facing - 1][1]))
             if self.level.cells[y][x] != '#':
                 self.move(ent, dx[ent.facing - 1])
             else:
-                self.position = (round(ent.position[0]), round(ent.position[1]))
+                ent.moving = False
+                ent.position = (round(ent.position[0]), round(ent.position[1]))
         
     def move(self, ent, dx):
         if dx[0] == 0:
@@ -159,7 +160,7 @@ class Game(threading.Thread):
             y = ent.position[1] + dx[1]*ent.speed*self.dt
         else:
             x = ent.position[0] + dx[0]*ent.speed*self.dt
-            y = (ent.position[1])
+            y = round(ent.position[1])
         ent.position = (x, y)
         ent.moving = True
 
