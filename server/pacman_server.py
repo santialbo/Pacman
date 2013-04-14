@@ -53,7 +53,7 @@ class Ghost(Entity):
         self.mode = GhostMode.NORMAL
         self.color = color
         self.active = False
-        self.facing = Direction.UP
+        self.facing = Direction.NONE
     
     def state(self):
         state = super(Ghost, self).state()
@@ -162,12 +162,7 @@ class Game(threading.Thread):
         dx = [[-1, 0], [0, -1], [1, 0], [0, 1]][direction - 1]
         x = int(round(ent.position[0] + dx[0]))
         y = int(round(ent.position[1] + dx[1]))
-        if self.level.cells[y][x] == '#':
-            return False
-        elif self.level.cells[y][x] == '^' and dx[1] == 1:
-            return False
-        else:
-            return True
+        return self.level.cells[y][x] != '#'
         
     def move(self, ent, direction):
         dx = [[-1, 0], [0, -1], [1, 0], [0, 1]][direction - 1]

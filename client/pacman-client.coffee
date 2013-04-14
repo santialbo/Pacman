@@ -253,18 +253,18 @@ class Game
     @drawPlayers ctx
 
   drawPlayers: (ctx) ->
-    d = ["left", "up", "right", "down"]
+    d = ["left", "left", "up", "right", "down"]
     c = ["red", "blue", "orange", "pink"]
     for p in @state.players
       if p.pacman
         if p.facing == 0
           s = @sprites.get("pacman")
         else if p.moving
-          s = @animationsPool["pacman_" + d[p.facing - 1]].requestSprite()
+          s = @animationsPool["pacman_" + d[p.facing]].requestSprite()
         else
-          s = @sprites.get("pacman_" + d[p.facing - 1] + "_1")
+          s = @sprites.get("pacman_" + d[p.facing] + "_1")
       else
-        name = "ghost_" + c[p.color] + "_" + d[p.facing - 1]
+        name = "ghost_" + c[p.color] + "_" + d[p.facing]
         if p.moving
           s = @animationsPool[name].requestSprite()
         else
