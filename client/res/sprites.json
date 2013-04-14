@@ -567,13 +567,13 @@
 "pacman_down_1":
 {
 	"frame": {"x":109,"y":28,"w":14,"h":12},
-	"spriteSourceSize": {"x":1,"y":3,"w":14,"h":12},
+	"spriteSourceSize": {"x":1,"y":1,"w":14,"h":12},
 	"sourceSize": {"w":16,"h":16}
 },
 "pacman_down_2":
 {
 	"frame": {"x":50,"y":27,"w":14,"h":10},
-	"spriteSourceSize": {"x":1,"y":5,"w":14,"h":10},
+	"spriteSourceSize": {"x":1,"y":0,"w":14,"h":10},
 	"sourceSize": {"w":16,"h":16}
 },
 "pacman_left_1":
@@ -585,7 +585,7 @@
 "pacman_left_2":
 {
 	"frame": {"x":77,"y":72,"w":9,"h":14},
-	"spriteSourceSize": {"x":7,"y":1,"w":9,"h":14},
+	"spriteSourceSize": {"x":6,"y":1,"w":9,"h":14},
 	"sourceSize": {"w":16,"h":16}
 },
 "pacman_right_1":
