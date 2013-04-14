@@ -265,7 +265,10 @@ class Game
           s = @sprites.get("pacman_" + d[p.facing - 1] + "_1")
       else
         name = "ghost_" + c[p.color] + "_" + d[p.facing - 1]
-        s = @animationsPool[name].requestSprite()
+        if p.moving
+          s = @animationsPool[name].requestSprite()
+        else
+          s = @animationsPool[name].peekSprite()
       @drawSpriteInPosition ctx, s, p.position[0], p.position[1]
 
       
