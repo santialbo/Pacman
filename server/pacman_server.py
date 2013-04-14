@@ -134,23 +134,23 @@ class Game(threading.Thread):
 
     def update_ent(self, ent):
         dirs = ["left", "up", "right", "down"]
-        dx = [[-1, 0], [0, -1], [1, 0], [0, 1]]
         for i in range(4):
             if ent.key_state[dirs[i]]:
                 if not ent.is_pacman and (i + 1 - ent.facing + 4) % 4 == 2:
                     # ghosts can't go back
                     continue
-                if self.can_go(ent, dx[i]):
+                if self.can_go(ent, i + 1):
                     ent.facing = i + 1
                     break
         if ent.facing > 0:
-            if self.can_go(ent, dx[ent.facing - 1]):
-                self.move(ent, dx[ent.facing - 1])
+            if self.can_go(ent, ent.facing):
+                self.move(ent, ent.facing)
             else:
                 ent.moving = False
                 ent.position = (round(ent.position[0]), round(ent.position[1]))
 
-    def can_go(self, ent, dx):
+    def can_go(self, ent, direction):
+        dx = [[-1, 0], [0, -1], [1, 0], [0, 1]][direction - 1]
         x = int(round(ent.position[0] + dx[0]))
         y = int(round(ent.position[1] + dx[1]))
         if self.level.cells[y][x] == '#':
@@ -160,7 +160,8 @@ class Game(threading.Thread):
         else:
             return True
         
-    def move(self, ent, dx):
+    def move(self, ent, direction):
+        dx = [[-1, 0], [0, -1], [1, 0], [0, 1]][direction - 1]
         if dx[0] == 0:
             x = round(ent.position[0])
             y = ent.position[1] + dx[1]*ent.speed*self.dt
