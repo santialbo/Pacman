@@ -47,7 +47,7 @@ class SpriteTextWriter
       if align == "center" then x-= width/2
       else x -= width
     for sprite in sprites
-      sprite.draw ctx, x, y
+      sprite.draw ctx, Math.round(x), Math.round(y)
       x += sprite.width()
 
 
