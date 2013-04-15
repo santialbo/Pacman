@@ -27,7 +27,7 @@
 {
 	"frame": {"x":2,"y":14,"w":6,"h":7},
 	"spriteSourceSize": {"x":1,"y":1,"w":6,"h":7},
-	"sourceSize": {"w":8,"h":9}
+	"sourceSize": {"w":9,"h":9}
 },
 "2":
 {
@@ -57,7 +57,7 @@
 {
 	"frame": {"x":208,"y":11,"w":8,"h":7},
 	"spriteSourceSize": {"x":0,"y":1,"w":8,"h":7},
-	"sourceSize": {"w":8,"h":9}
+	"sourceSize": {"w":9,"h":9}
 },
 "7":
 {
