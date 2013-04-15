@@ -67,11 +67,12 @@ class Game(threading.Thread):
 
     def __init__(self, clients):
         self.server = server
-        self.load_level(os.path.join(os.path.dirname(__file__), 'level'))
         self.running = False
         self.dt = 1.0/30
         self.pill_time = 0
         self.lives = 3
+        self.portals = {}
+        self.load_level(os.path.join(os.path.dirname(__file__), 'level'))
         self.assign_players(clients)
         super(Game, self).__init__()
 
@@ -79,6 +80,16 @@ class Game(threading.Thread):
         with open(file_name) as f:
             lines = f.readlines()
         self.cells = [list(line[:-1]) for line in lines]
+        # Find portals
+        portals = [[] for i in range(10)]
+        for i, line in enumerate(self.cells):
+            for j, cell in enumerate(line):
+                if cell.isdigit():
+                    portals[int(cell)].append((j, i))
+        for portal in portals:
+            if portal:
+                self.portals[portal[0]] = portal[1]
+                self.portals[portal[1]] = portal[0]
 
     def player_by_id(self, id):
         for ent in self.entities:
@@ -143,6 +154,7 @@ class Game(threading.Thread):
 
     def update_ent(self, ent):
         dirs = ["", "left", "up", "right", "down"]
+        self.check_portal(ent)
         for i in range(1, 5):
             if ent.key_state[dirs[i]]:
                 if not ent.is_pacman and (i - ent.facing + 4) % 4 == 2:
@@ -163,6 +175,16 @@ class Game(threading.Thread):
             else:
                 ent.moving = False
                 ent.position = (round(ent.position[0]), round(ent.position[1]))
+
+    def check_portal(self, ent):
+        ds = [[-1, 0], [0, -1], [1, 0], [0, 1]][ent.facing - 1]
+        x = int(round(ent.position[0]))
+        y = int(round(ent.position[1]))
+        if (x, y) in self.portals:
+            dx = x - ent.position[0]
+            dy = y - ent.position[1]
+            if dx*ds[0] > 0 or dy*ds[1] > 0:
+                ent.position = self.portals[(x, y)]
 
     def can_go(self, ent, direction):
         dx = [[-1, 0], [0, -1], [1, 0], [0, 1]][direction - 1]
