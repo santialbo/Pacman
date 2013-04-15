@@ -1,6 +1,6 @@
 window.SCALE = 1
-window.WIDTH = 232
-window.HEIGHT = 40 + 248 + 20
+window.WIDTH = 4 + 224 + 4
+window.HEIGHT = 4 + 26 + 248 + 20 + 4
 window.FPS = 30
 window.ROWS = 31
 window.COLS = 28
@@ -263,13 +263,13 @@ class Game
   drawSpriteInPosition: (ctx, s, x, y) ->
     [l, t, b, r] = [4, 5, 244, 221] # manually calibrated
     x = Math.round(4 + ( l+ (r - l)*x/(COLS - 1)) - s.width()/2)
-    y = Math.round(40 + (t + (b - t)*y/(ROWS - 1)) - s.height()/2)
+    y = Math.round(30 + (t + (b - t)*y/(ROWS - 1)) - s.height()/2)
     s.draw ctx, x, y
       
   drawMaze: (ctx) ->
     ctx.fillStyle = '#000'
     ctx.fillRect 0, 0, WIDTH*SCALE, HEIGHT*SCALE
-    @sprites.get("maze").draw ctx, 4, 40, SCALE
+    @sprites.get("maze").draw ctx, 4, 30, SCALE
 
   drawCookies: (ctx) ->
     s = @sprites.get("cookie")
@@ -286,9 +286,17 @@ class Game
           @drawSpriteInPosition ctx, p, x, y
   
   drawHUD: (ctx) ->
-    [x, y] = [24, 290]
+    # score
+    [x, y] = [40, 4]
+    if @time()%500 < 250
+      @textWriter.write ctx, "1up", x, y, 'center'
+    y += 10
+    @textWriter.write ctx, (@state.score + ""), x, y, 'center'
+    # lives
+    s = @sprites.get("pacman_left_1")
+    [x, y] = [24, HEIGHT - 4 - s.height()]
     for i in [0...@state.lives]
-      @sprites.get("pacman_left_1").draw ctx, x, y
+      s.draw ctx, x, y
       x += 20
 
 canvas = document.getElementById 'canvas'
