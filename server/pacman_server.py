@@ -63,24 +63,21 @@ class Ghost(Entity):
         return state
 
 
-class Level:
-
-    def __init__(self, fname):
-        with open(fname) as f:
-            lines = f.readlines()
-        self.cells = [list(line[:-1]) for line in lines]
-
-
 class Game(threading.Thread):
 
     def __init__(self, clients):
         self.server = server
-        self.level = Level(os.path.join(os.path.dirname(__file__), 'level'))
+        self.load_level(os.path.join(os.path.dirname(__file__), 'level'))
         self.running = False
         self.dt = 1.0/30
         self.pill_time = 0
         self.assign_players(clients)
         super(Game, self).__init__()
+
+    def load_level(self, file_name):
+        with open(file_name) as f:
+            lines = f.readlines()
+        self.cells = [list(line[:-1]) for line in lines]
 
     def player_by_id(self, id):
         for ent in self.entities:
@@ -170,7 +167,7 @@ class Game(threading.Thread):
         dx = [[-1, 0], [0, -1], [1, 0], [0, 1]][direction - 1]
         x = int(round(ent.position[0] + dx[0]))
         y = int(round(ent.position[1] + dx[1]))
-        return self.level.cells[y][x] != '#'
+        return self.cells[y][x] != '#'
         
     def move(self, ent, direction):
         dx = [[-1, 0], [0, -1], [1, 0], [0, 1]][direction - 1]
@@ -187,20 +184,20 @@ class Game(threading.Thread):
         pacman = self.entities[0]
         x = int(round(pacman.position[0]))
         y = int(round(pacman.position[1]))
-        if self.level.cells[y][x] == 'o':
-            self.level.cells[y][x] = ' '
+        if self.cells[y][x] == 'o':
+            self.cells[y][x] = ' '
             self.score += 10
-        elif self.level.cells[y][x] == 'O':
+        elif self.cells[y][x] == 'O':
             for ent in self.entities:
                 if not ent.is_pacman and ent.mode == GhostMode.NORMAL:
                     ent.mode = GhostMode.VULNERABLE
             self.pill_time = 8.0
-            self.level.cells[y][x] = ' '
+            self.cells[y][x] = ' '
             self.score += 50
 
     def game_state(self):
         return {
-            'level': self.level.cells,
+            'level': self.cells,
             'score': self.score,
             'players': [ent.state() for ent in self.entities],
             'pillTime': self.pill_time*1000,
