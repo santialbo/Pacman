@@ -71,6 +71,7 @@ class Game(threading.Thread):
         self.running = False
         self.dt = 1.0/30
         self.pill_time = 0
+        self.lives = 3
         self.assign_players(clients)
         super(Game, self).__init__()
 
@@ -199,6 +200,7 @@ class Game(threading.Thread):
         return {
             'level': self.cells,
             'score': self.score,
+            'lives': self.lives,
             'players': [ent.state() for ent in self.entities],
             'pillTime': self.pill_time*1000,
          }

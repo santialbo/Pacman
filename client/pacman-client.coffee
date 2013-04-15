@@ -202,9 +202,8 @@ class Game
       @state.running = true
     else if msg.label == "gameState"
       @cells = msg.data["level"]
-      @state.players = msg.data["players"]
-      @state.pillTime = msg.data["pillTime"]
-      @state.score = msg.data["score"]
+      for thing in ["players", "score", "lives", "pillTime"]
+        @state[thing] = msg.data[thing]
     
   hookKeys: () =>
     # Hooks event handlers to key press events
@@ -229,6 +228,7 @@ class Game
     @drawMaze(ctx)
     @drawCookies(ctx)
     @drawPlayers ctx
+    @drawHUD ctx
     if not @state.running
       @textWriter.write ctx, "ready!", WIDTH/2, 177 , "center"
 
@@ -282,6 +282,12 @@ class Game
           @drawSpriteInPosition ctx, s, x, y
         else if @cells[y][x] == "O"
           @drawSpriteInPosition ctx, p, x, y
+  
+  drawHUD: (ctx) ->
+    [x, y] = [24, 290]
+    for i in [0...@state.lives]
+      @sprites.get("pacman_left_1").draw ctx, x, y
+      x += 20
 
 canvas = document.getElementById('canvas')
 game = new Game(canvas)
