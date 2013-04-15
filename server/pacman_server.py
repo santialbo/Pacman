@@ -78,6 +78,7 @@ class Game(threading.Thread):
         self.level = Level(os.path.join(os.path.dirname(__file__), 'level'))
         self.running = False
         self.dt = 1.0/30
+        self.pill_time = 0
         self.assign_players(clients)
         super(Game, self).__init__()
 
@@ -131,6 +132,13 @@ class Game(threading.Thread):
 
     def update(self):
         self.check_pacman()
+        if self.pill_time > 0:
+            self.pill_time -= self.dt
+            if self.pill_time <= 0:
+                for ent in self.entities:
+                    if not ent.is_pacman and ent.mode == GhostMode.VULNERABLE:
+                        ent.mode = GhostMode.NORMAL
+            
         for ent in self.entities:
             self.update_ent(ent)
         self.publish("gameState", self.game_state())
@@ -183,6 +191,10 @@ class Game(threading.Thread):
             self.level.cells[y][x] = ' '
             self.score += 10
         elif self.level.cells[y][x] == 'O':
+            for ent in self.entities:
+                if not ent.is_pacman and ent.mode == GhostMode.NORMAL:
+                    ent.mode = GhostMode.VULNERABLE
+            self.pill_time = 8.0
             self.level.cells[y][x] = ' '
             self.score += 50
 
@@ -190,7 +202,8 @@ class Game(threading.Thread):
         return {
             'level': self.level.cells,
             'score': self.score,
-            'players': [ent.state() for ent in self.entities]
+            'players': [ent.state() for ent in self.entities],
+            'pillTime': self.pill_time*1000,
          }
 
     def handle_message(self, id, message_string):

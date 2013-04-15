@@ -29,6 +29,11 @@
 	"sprites": ["ghost_dead_blue_1", "ghost_dead_blue_2"],
 	"times": [175, 175]
 },
+"ghost_dead_blue_white":
+{
+	"sprites": ["ghost_dead_white_1", "ghost_dead_white_2", "ghost_dead_blue_1", "ghost_dead_blue_2"],
+	"times": [175, 175, 175, 175]
+},
 "ghost_red_left":
 {
 	"sprites": ["ghost_red_left_1", "ghost_red_left_2"],

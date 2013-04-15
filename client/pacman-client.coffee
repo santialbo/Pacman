@@ -122,16 +122,17 @@ class Game
       new AnimationDict @sprites, 'res/animations.json', FPS, @createEntities
 
   createEntities: () =>
-    @animationsPool["pill"] = @animations.get "pill"
-    #load animations
+    load = (name) => @animationsPool[name] = @animations.get name
+    load "pill"
     for d in ["left", "up", "right", "down"]
-      @animationsPool["pacman_" + d] = @animations.get("pacman_" + d)
+      load "pacman_" + d
       for c in ["red", "blue", "pink", "orange"]
         name = "ghost_" + c + "_" + d
-        @animationsPool[name] = @animations.get(name)
-    @animationsPool["ghost_dead_blue"] = @animations.get("ghost_dead_blue")
-
+        load name
+    load "ghost_dead_blue"
+    load "ghost_dead_blue_white"
     @connect()
+
 
   connect: () ->
     # connect to server and proceed to the waiting room
@@ -204,6 +205,8 @@ class Game
     else if msg.label == "gameState"
       @level.cells = msg.data["level"]
       @state.players = msg.data["players"]
+      @state.pillTime = msg.data["pillTime"]
+      @state.score = msg.data["score"]
     
 
   hookKeys: () =>
@@ -255,6 +258,7 @@ class Game
   drawPlayers: (ctx) ->
     d = ["left", "left", "up", "right", "down"]
     c = ["red", "blue", "orange", "pink"]
+    first = true
     for p in @state.players
       if p.pacman
         if p.facing == 0
@@ -264,11 +268,18 @@ class Game
         else
           s = @sprites.get("pacman_" + d[p.facing] + "_1")
       else
-        name = "ghost_" + c[p.color] + "_" + d[p.facing]
-        if p.moving
-          s = @animationsPool[name].requestSprite()
+        if p.mode == 1
+          console.log @state
+          a = "ghost_dead_blue"
+          if @state.pillTime < 2800 then a = "ghost_dead_blue_white"
+          if first
+            s = @animationsPool[a].requestSprite()
+            first = false
+          else
+            s = @animationsPool[a].peekSprite()
         else
-          s = @animationsPool[name].peekSprite()
+          name = "ghost_" + c[p.color] + "_" + d[p.facing]
+          s = @animationsPool[name].requestSprite()
       @drawSpriteInPosition ctx, s, p.position[0], p.position[1]
 
       
