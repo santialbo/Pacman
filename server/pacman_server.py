@@ -145,6 +145,7 @@ class Game(threading.Thread):
             time.sleep(itime + self.dt - time.time())
 
     def update(self):
+        self.check_pacman()
         if self.pill_time > 0:
             self.pill_time -= self.dt
             if self.pill_time <= 0:
@@ -153,10 +154,20 @@ class Game(threading.Thread):
                         ent.mode = GhostMode.NORMAL
             
         for ent in self.entities:
-            if ent.is_pacman:
-                self.check_pacman(ent)
             self.update_ent(ent)
         self.publish("gameState", self.game_state())
+
+    def pacman(self):
+        for ent in self.entities:
+            if ent.is_pacman:
+                return ent
+
+    def ghosts(self):
+        ghosts = []
+        for ent in self.entities:
+            if not ent.is_pacman:
+                ghosts.append(ent)
+        return ghosts
 
     def update_ent(self, ent):
         dirs = ["", "left", "up", "right", "down"]
@@ -221,8 +232,8 @@ class Game(threading.Thread):
         ent.position = (x, y)
         ent.moving = True
 
-    def check_pacman(self, pacman):
-        x, y = pacman.round_position()
+    def check_pacman(self):
+        x, y = self.pacman().round_position()
         if self.cells[y][x] == 'o':
             self.cells[y][x] = ' '
             self.score += 10
@@ -232,9 +243,9 @@ class Game(threading.Thread):
             self.set_ghost_vulnerable()
 
     def set_ghost_vulnerable(self):
-        for ent in self.entities:
-            if not ent.is_pacman and ent.mode == GhostMode.NORMAL:
-                ent.mode = GhostMode.VULNERABLE
+        for ghost in self.ghosts():
+            if ghost.mode == GhostMode.NORMAL:
+                ghost.mode = GhostMode.VULNERABLE
         self.pill_time = 8.0
 
     def game_state(self):
