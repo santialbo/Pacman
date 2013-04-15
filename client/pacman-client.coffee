@@ -21,6 +21,7 @@ class Sprite
       @info.frame.w, @info.frame.h,
       x*SCALE, y*SCALE, @info.frame.w*SCALE, @info.frame.h*SCALE
 
+
 class SpriteDict
   # SpriteDict is a dictionary with all the sprites in the sprites json file.
   # It avoids the creation of multiple image objects by having only one.
@@ -34,10 +35,12 @@ class SpriteDict
 
   get: (name) -> new Sprite(@sprite, @info[name])
 
-class SpriteTextDrawer
+
+class SpriteTextWriter
+  # SpriteTextWriter writes the given text in the given position.
   constructor: (@spriteDict) ->
 
-  drawText: (ctx, text, x, y, align) ->
+  write: (ctx, text, x, y, align) ->
     sprites = (text.split "").map (letter) => @spriteDict.get letter
     if align != "left"
       width = (sprites.map (s) -> s.width()).reduce (x, y) -> x + y
@@ -47,15 +50,6 @@ class SpriteTextDrawer
       sprite.draw ctx, x, y
       x += sprite.width()
 
-class Level
-  entities: null
-  cells: null
-
-  constructor: (filename, callback) ->
-    $.get filename, (data) => 
-      @cells = (data.split "\n").map (row) -> row.split ""
-      @cells.pop()
-      callback()
 
 class SpriteAnimation
   # SpriteAnimation handles repeating sprite animation. Every time a sprite
@@ -94,9 +88,10 @@ class Game
   connection: null
   interval: null
   sprites: null
+  textWriter: null
   animations: null
   animationsPool: {}
-  level: null
+  cells: null
   state: {}
   id: null
   
@@ -112,7 +107,10 @@ class Game
     @loadLevel()
     
   loadLevel: () ->
-    @level = new Level('res/level', @loadSprites)
+    $.get 'res/level', (data) => 
+      @cells = (data.split "\n").map (row) -> row.split ""
+      @cells.pop()
+      @loadSprites()
 
   loadSprites: () =>
     @sprites = new SpriteDict 'res/sprites.png', 'res/sprites.json', @loadAnimations
@@ -122,28 +120,28 @@ class Game
       new AnimationDict @sprites, 'res/animations.json', FPS, @createEntities
 
   createEntities: () =>
+    @textWriter = new SpriteTextWriter(@sprites)
     load = (name) => @animationsPool[name] = @animations.get name
     load "pill"
     for d in ["left", "up", "right", "down"]
       load "pacman_" + d
       for c in ["red", "blue", "pink", "orange"]
-        name = "ghost_" + c + "_" + d
-        load name
+        load "ghost_" + c + "_" + d
     load "ghost_dead_blue"
     load "ghost_dead_blue_white"
     @connect()
 
-
   connect: () ->
-    # connect to server and proceed to the waiting room
+    # Connect to server and proceed to the waiting room
     @connection = new WebSocket(SERVER)
     @connection.onmessage = @waitingRoomMsg
     @connection.onopen = @runWaitingRoom
 
   send: (description, obj) =>
+    # Sends object message to the server
     @connection.send(JSON.stringify {label: description, data: obj})
     
-  # Waiting screen
+  ############### Waiting screen ###############
 
   runWaitingRoom: () =>
     @interval = setInterval @drawWaitingRoom, (1000/FPS)
@@ -164,11 +162,11 @@ class Game
     y = 60
     s.draw ctx, WIDTH/2-s.width()/2, y
     y += s.height()+ 10
-    t = new SpriteTextDrawer(@sprites)
-    t.drawText ctx, "waiting for players", WIDTH/2, y , "center"
+    @textWriter.write ctx, "waiting for players", WIDTH/2, y , "center"
+    y += 20
     if @time()%2000 < 1200
-      y += 20
-      t.drawText ctx, @state.players + " of 5", WIDTH/2, y , "center"
+      @textWriter.write ctx, @state.players + " of 5", WIDTH/2, y, "center"
+    # Going right
     y = 200
     x = -10 + (@time()%10000)/3000*(WIDTH + 20)
     @animationsPool["pacman_right"].requestSprite().draw ctx, x, y
@@ -176,6 +174,7 @@ class Game
     for color in ["red", "blue", "pink", "orange"]
       @animationsPool["ghost_" + color + "_right"].requestSprite().draw ctx, x, y
       x -= 18
+    # Going left
     x = (7800 - @time()%10000)/3000*(WIDTH+20)
     s = @animationsPool["ghost_dead_blue"].requestSprite()
     for i in [0...4]
@@ -184,76 +183,54 @@ class Game
     x += 60
     @animationsPool["pacman_left"].requestSprite().draw ctx, x, y
 
-  # Actual game
+  ############### Actual game ###############
 
   runGame: () =>
-    # setup
     clearInterval @interval
     @connection.onmessage = @gameMsg
     @hookKeys()
     @initialTime = new Date().getTime()
     @state.running = false
     @interval = setInterval =>
-        @update()
         @drawGame()
     , (1000/FPS)
 
   gameMsg: (e) =>
+    # Handler function for onmessage event
     msg = JSON.parse(e.data)
     if msg.label == "go"
       @state.running = true
     else if msg.label == "gameState"
-      @level.cells = msg.data["level"]
+      @cells = msg.data["level"]
       @state.players = msg.data["players"]
       @state.pillTime = msg.data["pillTime"]
       @state.score = msg.data["score"]
     
-
   hookKeys: () =>
+    # Hooks event handlers to key press events
     @state.keys = {left: null, up: null, right: null, down: null}
-    window.onkeyup = (e) =>
-      switch e.keyCode
-        when 37, 65
-          @state.keys.left = false
-          @send "keyEvent", @state.keys
-        when 38, 87
-          @state.keys.up = false
-          @send "keyEvent", @state.keys
-        when 39, 68
-          @state.keys.right = false
-          @send "keyEvent", @state.keys
-        when 40, 83
-          @state.keys.down = false
-          @send "keyEvent", @state.keys
-    window.onkeydown = (e) =>
-      switch e.keyCode
-        when 37, 65
-          if not @state.keys.left
-            @state.keys.left = true
-            @send "keyEvent", @state.keys
-        when 38, 87
-          if not @state.keys.up
-            @state.keys.up = true
-            @send "keyEvent", @state.keys
-        when 39, 68
-          if not @state.keys.right
-            @state.keys.right = true
-            @send "keyEvent", @state.keys
-        when 40, 83
-          if not @state.keys.down
-            @state.keys.down = true
-            @send "keyEvent", @state.keys
-
-  update: () ->
+    dirFromCode = (keyCode) ->
+      switch keyCode
+        when 37, 65 then dir = "left"
+        when 38, 87 then dir = "up"
+        when 39, 68 then dir = "right"
+        when 40, 83 then dir = "down"
+        else ""
+    toggleKey = (state) => (e) =>
+      dir = dirFromCode e.keyCode
+      if dir != ""
+        @state.keys[dir] = state
+        @send "keyEvent", @state.keys
+    window.onkeyup = toggleKey false
+    window.onkeydown = toggleKey true
 
   drawGame: () =>
     ctx = @canvas.getContext('2d')
     @drawMaze(ctx)
     @drawCookies(ctx)
-    if not @state.running
-      t = new SpriteTextDrawer(@sprites)
-      t.drawText ctx, "ready!", WIDTH/2, 177 , "center"
     @drawPlayers ctx
+    if not @state.running
+      @textWriter.write ctx, "ready!", WIDTH/2, 177 , "center"
 
   drawPlayers: (ctx) ->
     d = ["left", "left", "up", "right", "down"]
@@ -269,7 +246,6 @@ class Game
           s = @sprites.get("pacman_" + d[p.facing] + "_1")
       else
         if p.mode == 1
-          console.log @state
           a = "ghost_dead_blue"
           if @state.pillTime < 2800 then a = "ghost_dead_blue_white"
           if first
@@ -282,7 +258,6 @@ class Game
           s = @animationsPool[name].requestSprite()
       @drawSpriteInPosition ctx, s, p.position[0], p.position[1]
 
-      
   drawSpriteInPosition: (ctx, s, x, y) ->
     l = 4; t = 5; b = 244; r = 221 # manually calibrated
     x = Math.round(4+(l+(r-l)*x/(COLS-1)) - s.width()/2)
@@ -303,9 +278,9 @@ class Game
 
     for y in [0...ROWS] by 1
       for x in [0...COLS] by 1
-        if @level.cells[y][x] == "o"
+        if @cells[y][x] == "o"
           @drawSpriteInPosition ctx, s, x, y
-        else if @level.cells[y][x] == "O"
+        else if @cells[y][x] == "O"
           @drawSpriteInPosition ctx, p, x, y
 
 canvas = document.getElementById('canvas')
