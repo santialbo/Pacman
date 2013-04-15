@@ -171,12 +171,18 @@ class Game(threading.Thread):
         return self.cells[y][x] != '#'
         
     def move(self, ent, direction):
+        speed = ent.speed
+        if not ent.is_pacman and ent.mode == GhostMode.NORMAL:
+            x = int(round(ent.position[0]))
+            y = int(round(ent.position[1]))
+            if self.cells[y][x] == 's':
+                speed *= 0.6
         dx = [[-1, 0], [0, -1], [1, 0], [0, 1]][direction - 1]
         if dx[0] == 0:
             x = round(ent.position[0])
-            y = ent.position[1] + dx[1]*ent.speed*self.dt
+            y = ent.position[1] + dx[1]*speed*self.dt
         else:
-            x = ent.position[0] + dx[0]*ent.speed*self.dt
+            x = ent.position[0] + dx[0]*speed*self.dt
             y = round(ent.position[1])
         ent.position = (x, y)
         ent.moving = True
