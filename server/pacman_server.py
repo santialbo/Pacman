@@ -202,10 +202,15 @@ class Game(threading.Thread):
         
     def move(self, ent, direction):
         speed = ent.speed
-        if not ent.is_pacman and ent.mode == GhostMode.NORMAL:
-            x, y = ent.round_position()
-            if self.cells[y][x] == 's':
-                speed *= 0.6
+        if not ent.is_pacman:
+            if ent.mode == GhostMode.NORMAL:
+                x, y = ent.round_position()
+                if self.cells[y][x] == 's':
+                    speed *= 0.6
+            elif ent.mode == GhostMode.VULNERABLE:
+                speed *= 0.8
+            else:
+                speed *= 2
         dx = [[-1, 0], [0, -1], [1, 0], [0, 1]][direction - 1]
         if dx[0] == 0:
             x = round(ent.position[0])
