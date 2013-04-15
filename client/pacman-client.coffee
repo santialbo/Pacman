@@ -54,20 +54,21 @@ class SpriteTextWriter
 class SpriteAnimation
   # SpriteAnimation handles repeating sprite animation. Every time a sprite
   # is requested it updates the current state.
-  dt: 0
+  rem_dt: 0
 
   constructor: (@sprites, @times, @fps) ->
   
   requestSprite: () ->
     dt = 1000/@fps
-    if dt > @dt
+    if dt > @rem_dt
       @sprites.splice(0, 0, @sprites.pop())
-      @dt = @times.pop()
-      @times.splice(0, 0, @dt)
-      @requestSprite (dt - @dt)
+      time = @times.pop()
+      @times.splice(0, 0, time)
+      @rem_dt += time
+      @requestSprite()
     else
-      @dt -= dt
-      return @sprites[@sprites.length - 1]
+      @rem_dt -= dt
+      @sprites[@sprites.length - 1]
 
   peekSprite: () -> @sprites[@sprites.length - 1]
 
@@ -80,7 +81,7 @@ class AnimationDict
     $.getJSON fileName, (json) => @info = json; callback()
 
   get: (name) ->
-    sprites = @info[name].sprites.map (sprite_name) => @spriteDict.get(sprite_name)
+    sprites = @info[name].sprites.map (sprite_name) => @spriteDict.get sprite_name
     new SpriteAnimation(sprites, @info[name].times, @fps)
 
 class Game
@@ -116,10 +117,9 @@ class Game
     @sprites = new SpriteDict 'res/sprites.png', 'res/sprites.json', @loadAnimations
 
   loadAnimations: () =>
-    @animations =
-      new AnimationDict @sprites, 'res/animations.json', FPS, @createEntities
+    @animations = new AnimationDict @sprites, 'res/animations.json', FPS, @createObjects
 
-  createEntities: () =>
+  createObjects: () =>
     @textWriter = new SpriteTextWriter(@sprites)
     load = (name) => @animationsPool[name] = @animations.get name
     load "pill"
@@ -156,7 +156,7 @@ class Game
       @runGame()
 
   drawWaitingRoom: () =>
-    ctx = @canvas.getContext('2d')
+    ctx = @canvas.getContext '2d'
     ctx.fillRect 0, 0, WIDTH*SCALE, HEIGHT*SCALE
     s = @sprites.get("title")
     y = 60
@@ -166,6 +166,7 @@ class Game
     y += 20
     if @time()%2000 < 1200
       @textWriter.write ctx, @state.players + " of 5", WIDTH/2, y, "center"
+
     # Going right
     y = 200
     x = -10 + (@time()%10000)/3000*(WIDTH + 20)
@@ -174,6 +175,7 @@ class Game
     for color in ["red", "blue", "pink", "orange"]
       @animationsPool["ghost_" + color + "_right"].requestSprite().draw ctx, x, y
       x -= 18
+
     # Going left
     x = (7800 - @time()%10000)/3000*(WIDTH+20)
     s = @animationsPool["ghost_dead_blue"].requestSprite()
@@ -197,7 +199,7 @@ class Game
 
   gameMsg: (e) =>
     # Handler function for onmessage event
-    msg = JSON.parse(e.data)
+    msg = JSON.parse e.data
     if msg.label == "go"
       @state.running = true
     else if msg.label == "gameState"
@@ -224,9 +226,9 @@ class Game
     window.onkeydown = toggleKey true
 
   drawGame: () =>
-    ctx = @canvas.getContext('2d')
-    @drawMaze(ctx)
-    @drawCookies(ctx)
+    ctx = @canvas.getContext '2d'
+    @drawMaze ctx
+    @drawCookies ctx
     @drawPlayers ctx
     @drawHUD ctx
     if not @state.running
@@ -259,9 +261,9 @@ class Game
       @drawSpriteInPosition ctx, s, p.position[0], p.position[1]
 
   drawSpriteInPosition: (ctx, s, x, y) ->
-    l = 4; t = 5; b = 244; r = 221 # manually calibrated
-    x = Math.round(4+(l+(r-l)*x/(COLS-1)) - s.width()/2)
-    y = Math.round(40+(t+(b-t)*y/(ROWS-1)) - s.height()/2)
+    [l, t, b, r] = [4, 5, 244, 221] # manually calibrated
+    x = Math.round(4 + ( l+ (r - l)*x/(COLS - 1)) - s.width()/2)
+    y = Math.round(40 + (t + (b - t)*y/(ROWS - 1)) - s.height()/2)
     s.draw ctx, x, y
       
   drawMaze: (ctx) ->
@@ -289,5 +291,5 @@ class Game
       @sprites.get("pacman_left_1").draw ctx, x, y
       x += 20
 
-canvas = document.getElementById('canvas')
+canvas = document.getElementById 'canvas'
 game = new Game(canvas)
