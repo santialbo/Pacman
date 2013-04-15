@@ -114,12 +114,12 @@ class Game(threading.Thread):
         self.score = 0
 
     def initialize_level(self):
-        self.entities[0].position = (13.5, 23)
+        self.entities[0].position = (15.5, 23)
         self.entities[1].active = True
-        self.entities[1].position = (13.5, 11)
-        self.entities[2].position = (12, 14)
-        self.entities[3].position = (13.5, 14)
-        self.entities[4].position = (15, 14)
+        self.entities[1].position = (15.5, 11)
+        self.entities[2].position = (14, 14)
+        self.entities[3].position = (15.5, 14)
+        self.entities[4].position = (17, 14)
 
     def publish(self, label, data = {}):
         for ent in self.entities:

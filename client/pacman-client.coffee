@@ -3,7 +3,7 @@ window.WIDTH = 4 + 224 + 4
 window.HEIGHT = 4 + 26 + 248 + 20 + 4
 window.FPS = 30
 window.ROWS = 31
-window.COLS = 28
+window.COLS = 32
 window.SERVER = "ws://localhost:8888/pacman" 
 
 class Sprite
@@ -261,9 +261,9 @@ class Game
       @drawSpriteInPosition ctx, s, p.position[0], p.position[1]
 
   drawSpriteInPosition: (ctx, s, x, y) ->
-    [l, t, b, r] = [4, 5, 244, 221] # manually calibrated
-    x = Math.round(4 + ( l+ (r - l)*x/(COLS - 1)) - s.width()/2)
-    y = Math.round(30 + (t + (b - t)*y/(ROWS - 1)) - s.height()/2)
+    [l, t, r, b] = [12, 12, 221, 244] # manually calibrated
+    x = Math.round(4 + ( l+ (r - l)*(x - 3)/(COLS - 6)) - s.width()/2)
+    y = Math.round(30 + (t + (b - t)*(y - 1)/(ROWS - 2)) - s.height()/2)
     s.draw ctx, x, y
       
   drawMaze: (ctx) ->
@@ -278,8 +278,8 @@ class Game
     else
       p = @sprites.get("pill")
 
-    for y in [0...ROWS] by 1
-      for x in [0...COLS] by 1
+    for y in [1...ROWS - 1] by 1
+      for x in [3...COLS - 3] by 1
         if @cells[y][x] == "o"
           @drawSpriteInPosition ctx, s, x, y
         else if @cells[y][x] == "O"
