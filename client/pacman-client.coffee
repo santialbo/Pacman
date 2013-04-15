@@ -204,7 +204,7 @@ class Game
       @state.running = true
     else if msg.label == "gameState"
       @cells = msg.data["level"]
-      for thing in ["players", "score", "lives", "pillTime"]
+      for thing in ["players", "score", "lives", "pillTime", "pause", "bonus"]
         @state[thing] = msg.data[thing]
     
   hookKeys: () =>
@@ -229,36 +229,52 @@ class Game
     ctx = @canvas.getContext '2d'
     @drawMaze ctx
     @drawCookies ctx
-    @drawPlayers ctx
+    @drawPacman ctx
+    @drawGhosts ctx
     @drawHUD ctx
     if not @state.running
       @textWriter.write ctx, "ready!", WIDTH/2, 166, "center"
 
-  drawPlayers: (ctx) ->
+  pacman: () ->
+    (@state.players.filter (player) -> player.pacman)[0]
+
+  ghosts: () ->
+    @state.players.filter (player) -> not player.pacman
+
+  drawPacman: (ctx) ->
+    d = ["left", "left", "up", "right", "down"]
+    c = ["red", "blue", "orange", "pink"]
+    pacman = @pacman()
+    if @state.pause
+      s = @sprites.get("score_" + @state.bonus)
+    else if pacman.facing == 0
+      s = @sprites.get("pacman")
+    else if pacman.moving
+      s = @animationsPool["pacman_" + d[pacman.facing]].requestSprite()
+    else
+      s = @sprites.get("pacman_" + d[pacman.facing] + "_1")
+    @drawSpriteInPosition ctx, s, pacman.position[0], pacman.position[1]
+
+  drawGhosts: (ctx) ->
     d = ["left", "left", "up", "right", "down"]
     c = ["red", "blue", "orange", "pink"]
     first = true
-    for p in @state.players
-      if p.pacman
-        if p.facing == 0
-          s = @sprites.get("pacman")
-        else if p.moving
-          s = @animationsPool["pacman_" + d[p.facing]].requestSprite()
+    for ghost in @ghosts()
+      if @state.pause and ghost.justEaten then continue
+      if ghost.mode == 0 # NORMAL  
+        name = "ghost_" + c[ghost.color] + "_" + d[ghost.facing]
+        s = @animationsPool[name].requestSprite()
+      else if ghost.mode == 1 # VULNERABLE
+        a = "ghost_dead_blue"
+        if @state.pillTime < 2800 then a = "ghost_dead_blue_white"
+        if first
+          s = @animationsPool[a].requestSprite()
+          first = false
         else
-          s = @sprites.get("pacman_" + d[p.facing] + "_1")
-      else
-        if p.mode == 1
-          a = "ghost_dead_blue"
-          if @state.pillTime < 2800 then a = "ghost_dead_blue_white"
-          if first
-            s = @animationsPool[a].requestSprite()
-            first = false
-          else
-            s = @animationsPool[a].peekSprite()
-        else
-          name = "ghost_" + c[p.color] + "_" + d[p.facing]
-          s = @animationsPool[name].requestSprite()
-      @drawSpriteInPosition ctx, s, p.position[0], p.position[1]
+          s = @animationsPool[a].peekSprite()
+      else if ghost.mode == 2 # DEAD
+        s = @sprites.get("eyes_" + d[ghost.facing])
+      @drawSpriteInPosition ctx, s, ghost.position[0], ghost.position[1]
 
   drawSpriteInPosition: (ctx, s, x, y) ->
     [l, t, r, b] = [12, 12, 221, 244] # manually calibrated

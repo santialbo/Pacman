@@ -58,6 +58,7 @@ class Ghost(Entity):
         self.mode = GhostMode.NORMAL
         self.color = color
         self.active = False
+        self.just_eaten = False
         self.facing = Direction.NONE
     
     def state(self):
@@ -65,6 +66,7 @@ class Ghost(Entity):
         state['mode'] = self.mode
         state['color'] = self.color
         state['active'] = self.active
+        state['justEaten'] = self.just_eaten
         return state
 
 
@@ -77,6 +79,8 @@ class Game(threading.Thread):
         self.pill_time = 0
         self.lives = 3
         self.portals = {}
+        self.pause_time = 0
+        self.bonus = 100
         self.load_level(os.path.join(os.path.dirname(__file__), 'level'))
         self.assign_players(clients)
         super(Game, self).__init__()
@@ -137,6 +141,9 @@ class Game(threading.Thread):
         time.sleep(2.0) # give time before starting
         self.publish("go")
         while self.running:
+            if self.pause_time > 0:
+                time.sleep(self.pause_time)
+                self.pause_time = 0
             itime = time.time()
             if self.all_offline():
                 self.running = False
@@ -242,11 +249,24 @@ class Game(threading.Thread):
             self.score += 50
             self.set_ghost_vulnerable()
 
+        for ghost in self.ghosts():
+            ghost.just_eaten = False
+            pp = self.pacman().position
+            gp = ghost.position
+            if abs(gp[0] - pp[0]) + abs(gp[1] - pp[1]) < 1.0:
+                if ghost.mode == GhostMode.VULNERABLE:
+                    ghost.mode = GhostMode.DEAD
+                    ghost.just_eaten = True
+                    self.pause_time = 1
+                    self.bonus *= 2
+                    self.score += self.bonus
+
     def set_ghost_vulnerable(self):
         for ghost in self.ghosts():
             if ghost.mode == GhostMode.NORMAL:
                 ghost.mode = GhostMode.VULNERABLE
         self.pill_time = 8.0
+        self.bonus = 100
 
     def game_state(self):
         return {
@@ -255,6 +275,8 @@ class Game(threading.Thread):
             'lives': self.lives,
             'players': [ent.state() for ent in self.entities],
             'pillTime': self.pill_time*1000,
+            'pause': self.pause_time > 0,
+            'bonus': self.bonus,
          }
 
     def handle_message(self, id, message_string):
