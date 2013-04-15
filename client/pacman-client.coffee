@@ -232,7 +232,7 @@ class Game
     @drawPlayers ctx
     @drawHUD ctx
     if not @state.running
-      @textWriter.write ctx, "ready!", WIDTH/2, 177 , "center"
+      @textWriter.write ctx, "ready!", WIDTH/2, 166, "center"
 
   drawPlayers: (ctx) ->
     d = ["left", "left", "up", "right", "down"]
