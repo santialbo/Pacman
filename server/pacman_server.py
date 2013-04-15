@@ -24,6 +24,11 @@ class Entity(object):
         self.speed = 7
         self.facing = Direction.NONE
 
+    def round_position(self, dx=0, dy=0):
+        x = int(round(self.position[0] + dx))
+        y = int(round(self.position[1] + dy))
+        return (x, y)
+
     def state(self):
         return {
             'id': self.client.id,
@@ -140,7 +145,6 @@ class Game(threading.Thread):
             time.sleep(itime + self.dt - time.time())
 
     def update(self):
-        self.check_pacman()
         if self.pill_time > 0:
             self.pill_time -= self.dt
             if self.pill_time <= 0:
@@ -149,6 +153,8 @@ class Game(threading.Thread):
                         ent.mode = GhostMode.NORMAL
             
         for ent in self.entities:
+            if ent.is_pacman:
+                self.check_pacman(ent)
             self.update_ent(ent)
         self.publish("gameState", self.game_state())
 
@@ -174,12 +180,11 @@ class Game(threading.Thread):
                 self.move(ent, ent.facing)
             else:
                 ent.moving = False
-                ent.position = (round(ent.position[0]), round(ent.position[1]))
+                ent.position = ent.round_position()
 
     def check_portal(self, ent):
         ds = [[-1, 0], [0, -1], [1, 0], [0, 1]][ent.facing - 1]
-        x = int(round(ent.position[0]))
-        y = int(round(ent.position[1]))
+        x, y = ent.round_position()
         if (x, y) in self.portals:
             dx = x - ent.position[0]
             dy = y - ent.position[1]
@@ -188,15 +193,13 @@ class Game(threading.Thread):
 
     def can_go(self, ent, direction):
         dx = [[-1, 0], [0, -1], [1, 0], [0, 1]][direction - 1]
-        x = int(round(ent.position[0] + dx[0]))
-        y = int(round(ent.position[1] + dx[1]))
+        x, y = ent.round_position(dx[0], dx[1])
         return self.cells[y][x] != '#'
         
     def move(self, ent, direction):
         speed = ent.speed
         if not ent.is_pacman and ent.mode == GhostMode.NORMAL:
-            x = int(round(ent.position[0]))
-            y = int(round(ent.position[1]))
+            x, y = ent.round_position()
             if self.cells[y][x] == 's':
                 speed *= 0.6
         dx = [[-1, 0], [0, -1], [1, 0], [0, 1]][direction - 1]
@@ -209,20 +212,21 @@ class Game(threading.Thread):
         ent.position = (x, y)
         ent.moving = True
 
-    def check_pacman(self):
-        pacman = self.entities[0]
-        x = int(round(pacman.position[0]))
-        y = int(round(pacman.position[1]))
+    def check_pacman(self, pacman):
+        x, y = pacman.round_position()
         if self.cells[y][x] == 'o':
             self.cells[y][x] = ' '
             self.score += 10
         elif self.cells[y][x] == 'O':
-            for ent in self.entities:
-                if not ent.is_pacman and ent.mode == GhostMode.NORMAL:
-                    ent.mode = GhostMode.VULNERABLE
-            self.pill_time = 8.0
             self.cells[y][x] = ' '
             self.score += 50
+            self.set_ghost_vulnerable()
+
+    def set_ghost_vulnerable(self):
+        for ent in self.entities:
+            if not ent.is_pacman and ent.mode == GhostMode.NORMAL:
+                ent.mode = GhostMode.VULNERABLE
+        self.pill_time = 8.0
 
     def game_state(self):
         return {
