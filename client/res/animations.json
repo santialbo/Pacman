@@ -118,5 +118,10 @@
 {
 	"sprites": ["pill", " "],
 	"times": [200, 200]
+},
+"death":
+{
+	"sprites": [" ", "death_10", "death_9", "death_8", "death_7", "death_6", "death_5", "death_4", "death_3", "death_2", "death_1", "death_0"],
+	"times": [99999, 250, 100, 100, 100, 100, 100, 100, 100, 100, 100, 250]
 }
 }

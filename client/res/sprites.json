@@ -179,65 +179,71 @@
 	"spriteSourceSize": {"x":1,"y":1,"w":7,"h":7},
 	"sourceSize": {"w":9,"h":9}
 },
+"death_0":
+{
+	"frame": {"x":34,"y":27,"w":14,"h":10},
+	"spriteSourceSize": {"x":2,"y":9,"w":14,"h":10},
+	"sourceSize": {"w":18,"h":18}
+},
 "death_1":
 {
 	"frame": {"x":2,"y":27,"w":16,"h":8},
-	"spriteSourceSize": {"x":1,"y":1,"w":16,"h":8},
-	"sourceSize": {"w":18,"h":10}
+	"spriteSourceSize": {"x":1,"y":10,"w":16,"h":8},
+	"sourceSize": {"w":18,"h":18}
 },
 "death_10":
 {
 	"frame": {"x":20,"y":27,"w":12,"h":10},
-	"spriteSourceSize": {"x":1,"y":1,"w":12,"h":10},
-	"sourceSize": {"w":14,"h":12}
+	"spriteSourceSize": {"x":3,"y":7,"w":12,"h":10},
+	"sourceSize": {"w":18,"h":18}
 },
 "death_2":
 {
 	"frame": {"x":124,"y":2,"w":16,"h":6},
-	"spriteSourceSize": {"x":1,"y":1,"w":16,"h":6},
-	"sourceSize": {"w":18,"h":8}
+	"spriteSourceSize": {"x":1,"y":10,"w":16,"h":6},
+	"sourceSize": {"w":18,"h":18}
 },
 "death_3":
 {
 	"frame": {"x":36,"y":2,"w":16,"h":5},
-	"spriteSourceSize": {"x":1,"y":1,"w":16,"h":5},
-	"sourceSize": {"w":18,"h":7}
+	"spriteSourceSize": {"x":1,"y":11,"w":16,"h":5},
+	"sourceSize": {"w":18,"h":18}
 },
 "death_4":
 {
 	"frame": {"x":18,"y":2,"w":16,"h":5},
-	"spriteSourceSize": {"x":1,"y":1,"w":16,"h":5},
-	"sourceSize": {"w":18,"h":7}
+	"spriteSourceSize": {"x":1,"y":11,"w":16,"h":5},
+	"sourceSize": {"w":18,"h":18}
 },
 "death_5":
 {
 	"frame": {"x":106,"y":2,"w":16,"h":6},
-	"spriteSourceSize": {"x":1,"y":1,"w":16,"h":6},
-	"sourceSize": {"w":18,"h":8}
+	"spriteSourceSize": {"x":1,"y":10,"w":16,"h":6},
+	"sourceSize": {"w":18,"h":18}
 },
 "death_6":
 {
 	"frame": {"x":184,"y":20,"w":14,"h":7},
-	"spriteSourceSize": {"x":1,"y":1,"w":14,"h":7},
-	"sourceSize": {"w":16,"h":9}
+	"spriteSourceSize": {"x":2,"y":9,"w":14,"h":7},
+	"sourceSize": {"w":18,"h":18}
 },
 "death_7":
 {
 	"frame": {"x":106,"y":10,"w":10,"h":7},
-	"spriteSourceSize": {"x":1,"y":1,"w":10,"h":7},
-	"sourceSize": {"w":12,"h":9}
+	"spriteSourceSize": {"x":4,"y":9,"w":10,"h":7},
+	"sourceSize": {"w":18,"h":18}
 },
 "death_8":
 {
 	"frame": {"x":142,"y":2,"w":6,"h":6},
-	"spriteSourceSize": {"x":1,"y":1,"w":6,"h":6},
-	"sourceSize": {"w":8,"h":8}
+	"spriteSourceSize": {"x":6,"y":9,"w":6,"h":6},
+	"sourceSize": {"w":18,"h":18}
 },
 "death_9":
 {
 	"frame": {"x":150,"y":2,"w":2,"h":6},
-	"spriteSourceSize": {"x":1,"y":1,"w":2,"h":6},
-	"sourceSize": {"w":4,"h":8}
+	"spriteSourceSize": {"x":8,"y":9,"w":2,"h":6},
+	"sourceSize": {"w":18,"h":18}
 },
 ".":
 {

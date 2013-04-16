@@ -78,6 +78,8 @@ class Game(threading.Thread):
         self.dt = 1.0/30
         self.pill_time = 0
         self.lives = 3
+        self.level = 1
+        self.score = 0
         self.portals = {}
         self.pause_time = 0
         self.bonus = 100
@@ -114,12 +116,12 @@ class Game(threading.Thread):
                          Ghost(clients[3], GhostColor.ORANGE),
                          Ghost(clients[4], GhostColor.PINK)]
 
-    def first_level(self):
-        self.score = 0
-
     def initialize_level(self):
+        self.death = False
+        self.running = True
+        self.pacman().active = True
+        self.pacman().facing = Direction.NONE
         self.entities[0].position = (15.5, 23)
-        self.entities[1].active = True
         self.entities[1].position = (15.5, 11)
         self.entities[2].position = (14, 14)
         self.entities[3].position = (15.5, 14)
@@ -132,10 +134,8 @@ class Game(threading.Thread):
                 ent.client.write_message(json.dumps(msg))
 
     def run(self):
-        time.sleep(1.0) # give time before starting
-        self.running = True
-        self.first_level()
         self.initialize_level()
+        time.sleep(1.0) # give time before starting
         self.publish("ready")
         self.publish("gameState", self.game_state())
         time.sleep(2.0) # give time before starting
@@ -144,12 +144,17 @@ class Game(threading.Thread):
             if self.pause_time > 0:
                 time.sleep(self.pause_time)
                 self.pause_time = 0
+                if self.death:
+                    self.lives -= 1
+                    break
             itime = time.time()
             if self.all_offline():
                 self.running = False
                 break
             self.update()
             time.sleep(itime + self.dt - time.time())
+        if self.running:
+            self.run()
 
     def update(self):
         self.check_pacman()
@@ -260,6 +265,9 @@ class Game(threading.Thread):
                     self.pause_time = 1
                     self.bonus *= 2
                     self.score += self.bonus
+                elif ghost.mode == GhostMode.NORMAL:
+                    self.death = True
+                    self.pause_time = 2
 
     def set_ghost_vulnerable(self):
         for ghost in self.ghosts():
@@ -277,6 +285,7 @@ class Game(threading.Thread):
             'pillTime': self.pill_time*1000,
             'pause': self.pause_time > 0,
             'bonus': self.bonus,
+            'death': self.death,
          }
 
     def handle_message(self, id, message_string):

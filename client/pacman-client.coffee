@@ -85,7 +85,7 @@ class AnimationDict
     new SpriteAnimation(name, sprites, @info[name].times.slice(), @fps)
 
 class Game
-  initialTime: null
+  refTime: null
   connection: null
   interval: null
   sprites: null
@@ -97,10 +97,10 @@ class Game
   id: null
   
   constructor: (@canvas) ->
-    @initialTime = new Date().getTime()
+    @refTime = new Date().getTime()
     @setup()
   
-  time: () -> new Date().getTime() - @initialTime
+  time: () -> new Date().getTime() - @refTime
 
   setup: () ->
     @canvas.height = HEIGHT*SCALE
@@ -123,6 +123,7 @@ class Game
     @textWriter = new SpriteTextWriter(@sprites)
     load = (name) => @animationsPool[name] = @animations.get name
     load "pill"
+    load "death"
     for d in ["left", "up", "right", "down"]
       load "pacman_" + d
       for c in ["red", "blue", "pink", "orange"]
@@ -191,7 +192,7 @@ class Game
     clearInterval @interval
     @connection.onmessage = @gameMsg
     @hookKeys()
-    @initialTime = new Date().getTime()
+    @refTime = new Date().getTime()
     @state.running = false
     @interval = setInterval =>
         @drawGame()
@@ -200,11 +201,17 @@ class Game
   gameMsg: (e) =>
     # Handler function for onmessage event
     msg = JSON.parse e.data
-    if msg.label == "go"
+    if msg.label == "ready"
+      @runGame()
+    else if msg.label == "go"
       @state.running = true
     else if msg.label == "gameState"
       @cells = msg.data["level"]
-      for thing in ["players", "score", "lives", "pillTime", "pause", "bonus"]
+      things = ["players", "score", "lives", "pillTime", "pause", "bonus", "death"]
+      if not @state.death and msg.data.death
+        @refTime = new Date().getTime()
+        @animationsPool["death"] = @animations.get "death"
+      for thing in things
         @state[thing] = msg.data[thing]
     
   hookKeys: () =>
@@ -245,7 +252,12 @@ class Game
     d = ["left", "left", "up", "right", "down"]
     c = ["red", "blue", "orange", "pink"]
     pacman = @pacman()
-    if @state.pause
+    if @state.death 
+      if @time() < 1000
+        s = @sprites.get("pacman_" + d[pacman.facing] + "_1")
+      else
+        s = @animationsPool["death"].requestSprite()
+    else if @state.pause
       s = @sprites.get("score_" + @state.bonus)
     else if pacman.facing == 0
       s = @sprites.get("pacman")
@@ -256,6 +268,8 @@ class Game
     @drawSpriteInPosition ctx, s, pacman.position[0], pacman.position[1]
 
   drawGhosts: (ctx) ->
+    if @state.death and @time() > 1000
+      return
     d = ["left", "left", "up", "right", "down"]
     c = ["red", "blue", "orange", "pink"]
     first = true
