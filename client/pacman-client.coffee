@@ -9,7 +9,7 @@ window.SERVER = "ws://localhost:8888/pacman"
 class Sprite
   # Sprite contains a reference to the spritesheet and the necessary
   # information to draw the actual sprite
-  constructor: (@image, @info) ->
+  constructor: (@name, @image, @info) ->
   
   width: () -> @info.sourceSize.w
   height: () -> @info.sourceSize.h
@@ -33,7 +33,7 @@ class SpriteDict
     @sprite.src = spriteFile
     $.getJSON infoFile, (json) => @info = json; callback()
 
-  get: (name) -> new Sprite(@sprite, @info[name])
+  get: (name) -> new Sprite(@name, @sprite, @info[name])
 
 
 class SpriteTextWriter
@@ -56,7 +56,7 @@ class SpriteAnimation
   # is requested it updates the current state.
   rem_dt: 0
 
-  constructor: (@sprites, @times, @fps) ->
+  constructor: (@name, @sprites, @times, @fps) ->
   
   requestSprite: () ->
     dt = 1000/@fps
@@ -82,7 +82,7 @@ class AnimationDict
 
   get: (name) ->
     sprites = @info[name].sprites.map (sprite_name) => @spriteDict.get sprite_name
-    new SpriteAnimation(sprites, @info[name].times, @fps)
+    new SpriteAnimation(name, sprites, @info[name].times, @fps)
 
 class Game
   initialTime: null
