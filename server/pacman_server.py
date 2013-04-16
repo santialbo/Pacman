@@ -31,7 +31,6 @@ class Entity(object):
 
     def state(self):
         return {
-            'id': self.client.id,
             'moving': self.moving,
             'position': self.position,
             'pacman': self.is_pacman,
@@ -115,6 +114,14 @@ class Game(threading.Thread):
                          Ghost(clients[2], GhostColor.BLUE),
                          Ghost(clients[3], GhostColor.ORANGE),
                          Ghost(clients[4], GhostColor.PINK)]
+        for ent in self.entities:
+            if ent.is_pacman:
+                data = 0
+            else:
+                data = ent.color + 1
+            msg = {'label': "identity", 'data': data}
+            ent.client.write_message(json.dumps(msg))
+        
 
     def initialize_level(self):
         self.death = False

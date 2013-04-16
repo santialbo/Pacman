@@ -1,6 +1,6 @@
 window.SCALE = 1
 window.WIDTH = 4 + 224 + 4
-window.HEIGHT = 4 + 26 + 248 + 20 + 4
+window.HEIGHT = 4 + 22 + 248 + 20 + 4
 window.FPS = 30
 window.ROWS = 31
 window.COLS = 32
@@ -95,6 +95,7 @@ class Game
   cells: null
   state: {}
   id: null
+  identity: null
   
   constructor: (@canvas) ->
     @refTime = new Date().getTime()
@@ -130,6 +131,8 @@ class Game
         load "ghost_" + c + "_" + d
     load "ghost_dead_blue"
     load "ghost_dead_blue_white"
+    for ent in ["pacman", "ghost_red", "ghost_blue", "ghost_orange", "ghost_pink"]
+      @animationsPool[ent + "_left_aux"] = @animations.get ent + "_left"
     @connect()
 
   connect: () ->
@@ -151,6 +154,8 @@ class Game
     msg = JSON.parse(e.data)
     if msg.label == "id"
       @id = msg.data
+    else if msg.label == "identity"
+      @identity = msg.data
     else if msg.label == "numPlayers"
       @state.players = msg.data
     else if msg.label == "ready"
@@ -248,6 +253,10 @@ class Game
   ghosts: () ->
     @state.players.filter (player) -> not player.pacman
 
+  me: () =>
+    if @identity == 0 then @pacman()
+    else (@ghosts().filter (ghost) => ghost.color == @identity - 1)[0]
+
   drawPacman: (ctx) ->
     d = ["left", "left", "up", "right", "down"]
     c = ["red", "blue", "orange", "pink"]
@@ -293,13 +302,13 @@ class Game
   drawSpriteInPosition: (ctx, s, x, y) ->
     [l, t, r, b] = [12, 12, 221, 244] # manually calibrated
     x = Math.round(4 + ( l+ (r - l)*(x - 3)/(COLS - 6)) - s.width()/2)
-    y = Math.round(30 + (t + (b - t)*(y - 1)/(ROWS - 2)) - s.height()/2)
+    y = Math.round(26 + (t + (b - t)*(y - 1)/(ROWS - 2)) - s.height()/2)
     s.draw ctx, x, y
       
   drawMaze: (ctx) ->
     ctx.fillStyle = '#000'
     ctx.fillRect 0, 0, WIDTH*SCALE, HEIGHT*SCALE
-    @sprites.get("maze").draw ctx, 4, 30, SCALE
+    @sprites.get("maze").draw ctx, 4, 26, SCALE
 
   drawCookies: (ctx) ->
     s = @sprites.get("cookie")
@@ -322,6 +331,14 @@ class Game
       @textWriter.write ctx, "1up", x, y, 'center'
     y += 10
     @textWriter.write ctx, (@state.score + ""), x, y, 'center'
+    # identity
+    [x, y] = [WIDTH - 44, 4]
+    @textWriter.write ctx, "you", x, y, 'center'
+    y += 10
+    @textWriter.write ctx, "are", x, y, 'center'
+    [x, y] = [WIDTH - 24, 6]
+    e = ["pacman", "ghost_red", "ghost_blue", "ghost_orange", "ghost_pink"][@identity]
+    @animationsPool[e + "_left_aux"].requestSprite().draw ctx, x, y
     # lives
     s = @sprites.get("pacman_left_1")
     [x, y] = [24, HEIGHT - 4 - s.height()]
