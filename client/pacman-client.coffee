@@ -57,14 +57,14 @@ class SpriteAnimation
   rem_dt: 0
 
   constructor: (@name, @sprites, @times, @fps) ->
+    rem_dt: @times[@times.length - 1]
   
   requestSprite: () ->
     dt = 1000/@fps
     if dt > @rem_dt
       @sprites.splice(0, 0, @sprites.pop())
-      time = @times.pop()
-      @times.splice(0, 0, time)
-      @rem_dt += time
+      @times.splice(0, 0, @times.pop())
+      @rem_dt += @times[@times.length - 1]
       @requestSprite()
     else
       @rem_dt -= dt
@@ -82,7 +82,7 @@ class AnimationDict
 
   get: (name) ->
     sprites = @info[name].sprites.map (sprite_name) => @spriteDict.get sprite_name
-    new SpriteAnimation(name, sprites, @info[name].times, @fps)
+    new SpriteAnimation(name, sprites, @info[name].times.slice(), @fps)
 
 class Game
   initialTime: null
