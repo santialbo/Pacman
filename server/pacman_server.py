@@ -116,21 +116,21 @@ class Game(threading.Thread):
                          Ghost(clients[3], GhostColor.ORANGE),
                          Ghost(clients[4], GhostColor.PINK)]
         for ent in self.entities:
-            if ent.is_pacman:
-                data = 0
-            else:
-                data = ent.color + 1
-            msg = {'label': "identity", 'data': data}
+            identity = 0 if ent.is_pacman else ent.color + 1
+            msg = {'label': "identity", 'data': identity}
             ent.client.write_message(json.dumps(msg))
-        
 
     def initialize_level(self):
         self.death = False
-        self.running = True
-        self.pacman().active = True
-        self.pacman().facing = Direction.NONE
-        self.entities[0].position = (15.5, 23)
-        self.entities[1].position = (15.5, 11)
+        pacman, ghosts = self.entities[0], self.entities[1:]
+        pacman.active = True
+        pacman.facing = Direction.NONE
+        pacman.position = (15.5, 23)
+        ghosts[0].position = (15.5, 11)
+        ghosts[0].active = True
+        ghosts[1].active = False
+        ghosts[2].active = False
+        ghosts[3].active = False
         self.entities[2].position = (14, 14)
         self.entities[3].position = (15.5, 14)
         self.entities[4].position = (17, 14)
@@ -140,41 +140,61 @@ class Game(threading.Thread):
             if ent.client.active:
                 msg = {'label': label, 'data': data}
                 ent.client.write_message(json.dumps(msg))
+    
+    def send_game_state(self):
+        self.publish("gameState", self.game_state())
+
+    def game_state(self):
+        return {
+            'level': self.cells,
+            'score': self.score,
+            'lives': self.lives,
+            'players': [ent.state() for ent in self.entities],
+            'pillTime': self.pill_time*1000,
+            'pause': self.pause_time > 0,
+            'bonus': self.bonus,
+            'death': self.death,
+         }
 
     def run(self):
         self.initialize_level()
         time.sleep(1.0) # give time before starting
         self.publish("ready")
-        self.publish("gameState", self.game_state())
+        self.running = True
+        self.send_game_state()
         time.sleep(2.0) # give time before starting
         self.publish("go")
-        it = 0
+        ticks_since_last_update = 0
         while self.running:
             if self.pause_time > 0:
                 time.sleep(self.pause_time)
                 self.pause_time = 0
                 if self.death:
                     self.lives -= 1
-                    break
+                    break # to start again
             itime = time.time()
+            # finish if all players are disconected
             if self.all_offline():
                 self.running = False
                 break
+            # update and send updated game state if necessary
             self.update()
-
-            if self.send_update:
+            ticks_since_last_update += 1
+            if self.send_update or ticks_since_last_update > 10:
                 self.send_update = False
+                ticks_since_last_update = 0
                 self.send_game_state()
-            elif it % 10 == 0:
-                self.send_game_state()
-            it += 1
+            # sleep remaining time
             time.sleep(itime + self.dt - time.time())
 
         if self.running:
             self.run()
 
     def update(self):
+        for ent in self.entities:
+            self.update_ent(ent)
         self.check_pacman()
+        self.check_ghost_pacman_collisions()
         if self.pill_time > 0:
             self.pill_time -= self.dt
             if self.pill_time <= 0:
@@ -182,23 +202,6 @@ class Game(threading.Thread):
                 for ent in self.entities:
                     if not ent.is_pacman and ent.mode == GhostMode.VULNERABLE:
                         ent.mode = GhostMode.NORMAL
-        for ent in self.entities:
-            self.update_ent(ent)
-    
-    def send_game_state(self):
-        self.publish("gameState", self.game_state())
-
-    def pacman(self):
-        for ent in self.entities:
-            if ent.is_pacman:
-                return ent
-
-    def ghosts(self):
-        ghosts = []
-        for ent in self.entities:
-            if not ent.is_pacman:
-                ghosts.append(ent)
-        return ghosts
 
     def update_ent(self, ent):
         dirs = ["", "left", "up", "right", "down"]
@@ -266,7 +269,7 @@ class Game(threading.Thread):
         ent.moving = True
 
     def check_pacman(self):
-        x, y = self.pacman().round_position()
+        x, y = self.entities[0].round_position()
         if self.cells[y][x] == 'o':
             self.cells[y][x] = ' '
             self.score += 10
@@ -277,10 +280,10 @@ class Game(threading.Thread):
             self.send_update = True
             self.set_ghost_vulnerable()
 
-        for ghost in self.ghosts():
+    def check_ghost_pacman_collisions(self):
+        for ghost in self.entities[1:]:
             ghost.just_eaten = False
-            pp = self.pacman().position
-            gp = ghost.position
+            pp, gp = self.entities[0].position, ghost.position
             if abs(gp[0] - pp[0]) + abs(gp[1] - pp[1]) < 1.0:
                 if ghost.mode == GhostMode.VULNERABLE:
                     ghost.mode = GhostMode.DEAD
@@ -295,23 +298,11 @@ class Game(threading.Thread):
                     self.send_update = True
 
     def set_ghost_vulnerable(self):
-        for ghost in self.ghosts():
+        for ghost in self.entities[1:]:
             if ghost.mode == GhostMode.NORMAL:
                 ghost.mode = GhostMode.VULNERABLE
         self.pill_time = 8.0
         self.bonus = 100
-
-    def game_state(self):
-        return {
-            'level': self.cells,
-            'score': self.score,
-            'lives': self.lives,
-            'players': [ent.state() for ent in self.entities],
-            'pillTime': self.pill_time*1000,
-            'pause': self.pause_time > 0,
-            'bonus': self.bonus,
-            'death': self.death,
-         }
 
     def handle_message(self, id, message_string):
         message = json.loads(message_string)
