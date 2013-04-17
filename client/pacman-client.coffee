@@ -241,6 +241,7 @@ class Game
       @runGame()
     else if msg.label == "go"
       @state.running = true
+      @refTime = new Date().getTime()
     else if msg.label == "gameState"
       @cells = msg.data["level"]
       things = ["players", "score", "lives", "pillTime", "pause", "bonus", "death"]
@@ -316,20 +317,34 @@ class Game
     first = true
     for ghost in @ghosts()
       if @state.pause and ghost.justEaten then continue
-      if ghost.mode == 0 # NORMAL  
-        name = "ghost_" + c[ghost.color] + "_" + d[ghost.facing]
-        s = @animationsPool[name].requestSprite()
-      else if ghost.mode == 1 # VULNERABLE
-        a = "ghost_dead_blue"
-        if @state.pillTime < 2800 then a = "ghost_dead_blue_white"
-        if first
-          s = @animationsPool[a].requestSprite()
-          first = false
-        else
-          s = @animationsPool[a].peekSprite()
-      else if ghost.mode == 2 # DEAD
-        s = @sprites.get("eyes_" + d[ghost.facing])
-      @drawSpriteInPosition ctx, s, ghost.position[0], ghost.position[1]
+      if ghost.active
+        if ghost.mode == 0 # NORMAL  
+          name = "ghost_" + c[ghost.color] + "_" + d[ghost.facing]
+          s = @animationsPool[name].requestSprite()
+        else if ghost.mode == 1 # VULNERABLE
+          a = "ghost_dead_blue"
+          if @state.pillTime < 2800 then a = "ghost_dead_blue_white"
+          if first
+            s = @animationsPool[a].requestSprite()
+            first = false
+          else
+            s = @animationsPool[a].peekSprite()
+        else if ghost.mode == 2 # DEAD
+          s = @sprites.get("eyes_" + d[ghost.facing])
+        @drawSpriteInPosition ctx, s, ghost.position[0], ghost.position[1]
+      else
+        [a, b] = [500, 0.5]
+        # YEAH MR. WHITE, SCIENCE!
+        x = 13.6 + (ghost.color - 1)*(17.4 - 13.6)/2
+        t = if @state.running then @time() else 0
+        t += (ghost.color - 1)/2*a + a*1.25
+        y = 14 + b*(2*Math.abs(2*(t/a - Math.floor(t/a + 0.5))) - 1)
+        sign = (x) -> if x >= 0 then 1 else -1
+        updown = ["up", "down"][Math.round((sign((t - a/2) % a - a/2))/2 + 0.5)]
+        s = @animationsPool["ghost_" + c[ghost.color] + "_" + updown].requestSprite()
+        @drawSpriteInPosition ctx, s, x, y
+
+
 
   drawSpriteInPosition: (ctx, s, x, y) ->
     [l, t, r, b] = [12, 12, 221, 244] # manually calibrated

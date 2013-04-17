@@ -128,12 +128,8 @@ class Game(threading.Thread):
         pacman.position = (15.5, 23)
         ghosts[0].position = (15.5, 11)
         ghosts[0].active = True
-        ghosts[1].active = False
-        ghosts[2].active = False
-        ghosts[3].active = False
-        self.entities[2].position = (14, 14)
-        self.entities[3].position = (15.5, 14)
-        self.entities[4].position = (17, 14)
+        for ghost in ghosts[1:]:
+            ghost.active = False
 
     def publish(self, label, data = {}):
         for ent in self.entities:
