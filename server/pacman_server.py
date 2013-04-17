@@ -218,8 +218,9 @@ class Game(threading.Thread):
                 if self.cells[y][x] == 's' or self.cells[y][x].isdigit():
                     # can't go back when accessing portal
                     continue
-                if not ent.is_pacman and (i - ent.facing + 4) % 4 == 2:
-                    # ghosts can't go back unless it's the only way
+                if not ent.is_pacman and ent.mode == GhostMode.NORMAL \
+                    and (i - ent.facing + 4) % 4 == 2:
+                    # ghosts can't go back unless it's the only way or are dead
                     j = i - 2 if i > 2 else i + 2
                     left = j - 1 if j > 1 else 4
                     right = j + 1 if j < 4 else 1
