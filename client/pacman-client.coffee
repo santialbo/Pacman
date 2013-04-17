@@ -209,6 +209,7 @@ class Game
       for player in @state.players
         if @canMove player
           @move player
+      @state.timestamp = new Date().getTime()
 
   canMove: (player) =>
     dx = [[0, 0], [-1, 0], [0, -1], [1, 0], [0, 1]][player.facing]
@@ -218,21 +219,20 @@ class Game
 
   move: (player) =>
     dt = new Date().getTime() - @state.timestamp
-    @state.timestamp = new Date().getTime()
     speed = player.speed
-    if not player.pacamn
+    if not player.pacman
       if player.mode == 0
         [x, y] = [Math.round(player.position[0]), Math.round(player.position[1])]
         if @cells[y][x] == 's'
           speed *= 0.6
         else if player.mode == 1
           speed *= 0.8
-        else
+        else if player.mode == 2
           speed *= 2
-      dx = [[0, 0], [-1, 0], [0, -1], [1, 0], [0, 1]][player.facing]
-      x = player.position[0] + dx[0]*speed*dt/1000
-      y = player.position[1] + dx[1]*speed*dt/1000
-      player.position = [x, y]
+    dx = [[0, 0], [-1, 0], [0, -1], [1, 0], [0, 1]][player.facing]
+    x = player.position[0] + dx[0]*speed*dt/1000
+    y = player.position[1] + dx[1]*speed*dt/1000
+    player.position = [x, y]
 
   gameMsg: (e) =>
     # Handler function for onmessage event

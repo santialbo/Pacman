@@ -59,7 +59,6 @@ class Ghost(Entity):
         self.color = color
         self.active = False
         self.just_eaten = False
-        self.facing = Direction.NONE
     
     def state(self):
         state = super(Ghost, self).state()
@@ -166,7 +165,7 @@ class Game(threading.Thread):
             if self.send_update:
                 self.send_update = False
                 self.send_game_state()
-            elif it % 6 == 0:
+            elif it % 10 == 0:
                 self.send_game_state()
             it += 1
             time.sleep(itime + self.dt - time.time())
