@@ -34,7 +34,8 @@ class Entity(object):
             'moving': self.moving,
             'position': self.position,
             'pacman': self.is_pacman,
-            'facing': self.facing
+            'facing': self.facing,
+            'speed': self.speed
         }
 
 
@@ -79,6 +80,7 @@ class Game(threading.Thread):
         self.lives = 3
         self.level = 1
         self.score = 0
+        self.send_update = False
         self.portals = {}
         self.pause_time = 0
         self.bonus = 100
@@ -147,6 +149,7 @@ class Game(threading.Thread):
         self.publish("gameState", self.game_state())
         time.sleep(2.0) # give time before starting
         self.publish("go")
+        it = 0
         while self.running:
             if self.pause_time > 0:
                 time.sleep(self.pause_time)
@@ -159,7 +162,15 @@ class Game(threading.Thread):
                 self.running = False
                 break
             self.update()
+
+            if self.send_update:
+                self.send_update = False
+                self.send_game_state()
+            elif it % 6 == 0:
+                self.send_game_state()
+            it += 1
             time.sleep(itime + self.dt - time.time())
+
         if self.running:
             self.run()
 
@@ -168,12 +179,14 @@ class Game(threading.Thread):
         if self.pill_time > 0:
             self.pill_time -= self.dt
             if self.pill_time <= 0:
+                self.send_update = True
                 for ent in self.entities:
                     if not ent.is_pacman and ent.mode == GhostMode.VULNERABLE:
                         ent.mode = GhostMode.NORMAL
-            
         for ent in self.entities:
             self.update_ent(ent)
+    
+    def send_game_state(self):
         self.publish("gameState", self.game_state())
 
     def pacman(self):
@@ -207,6 +220,8 @@ class Game(threading.Thread):
                         self.can_go(ent, right)):
                         continue
                 if self.can_go(ent, i):
+                    if ent.facing != i:
+                        self.send_update = True
                     ent.facing = i
                     break
         if ent.facing > 0:
@@ -256,9 +271,11 @@ class Game(threading.Thread):
         if self.cells[y][x] == 'o':
             self.cells[y][x] = ' '
             self.score += 10
+            self.send_update = True
         elif self.cells[y][x] == 'O':
             self.cells[y][x] = ' '
             self.score += 50
+            self.send_update = True
             self.set_ghost_vulnerable()
 
         for ghost in self.ghosts():
@@ -272,9 +289,11 @@ class Game(threading.Thread):
                     self.pause_time = 1
                     self.bonus *= 2
                     self.score += self.bonus
+                    self.send_update = True
                 elif ghost.mode == GhostMode.NORMAL:
                     self.death = True
                     self.pause_time = 2
+                    self.send_update = True
 
     def set_ghost_vulnerable(self):
         for ghost in self.ghosts():
