@@ -209,6 +209,11 @@ class Game
       for player in @state.players
         if @canMove player
           @move player
+        if @state.running and not player.pacman and not player.active
+          player.inactiveTime -= 1000/FPS
+          if player.inactiveTime < 0
+            player.active
+            player.position = [15.5, 11]
       @state.timestamp = new Date().getTime()
 
   canMove: (player) =>
@@ -338,15 +343,26 @@ class Game
           s = @sprites.get("eyes_" + d[ghost.facing])
         @drawSpriteInPosition ctx, s, ghost.position[0], ghost.position[1]
       else
+
         [a, b] = [500, 0.5]
         # YEAH MR. WHITE, SCIENCE!
-        x = 13.6 + (ghost.color - 1)*(17.4 - 13.6)/2
+        sign = (x) -> if x >= 0 then 1 else -1
+        [x0, dx] = [15.5, 1.9]
         t = if @state.running then @time() else 0
         t += (ghost.color - 1)/2*a + a*1.25
-        y = 14 + b*(2*Math.abs(2*(t/a - Math.floor(t/a + 0.5))) - 1)
-        sign = (x) -> if x >= 0 then 1 else -1
-        updown = ["up", "down"][Math.round((sign((t - a/2) % a - a/2))/2 + 0.5)]
-        s = @animationsPool["ghost_" + c[ghost.color] + "_" + updown].requestSprite()
+        if ghost.inactiveTime > 1000
+          x = x0 + (ghost.color - 2)*dx
+          y = 14 + b*(2*Math.abs(2*(t/a - Math.floor(t/a + 0.5))) - 1)
+          dir = ["up", "down"][Math.round((sign((t - a/2) % a - a/2))/2 + 0.5)]
+        else if ghost.inactiveTime > 500
+          x = x0 + (ghost.color - 2)*dx*(Math.max(ghost.inactiveTime - 500, 0)/500)
+          y = 14
+          dir = ["right", "left"][Math.round(sign(ghost.color - 2)/2 + 0.5)]
+        else
+          x = x0
+          y = 11 + (ghost.inactiveTime/500)*3*(ghost.inactiveTime > 0)
+          dir = "up"
+        s = @animationsPool["ghost_" + c[ghost.color] + "_" + dir].requestSprite()
         @drawSpriteInPosition ctx, s, x, y
 
 

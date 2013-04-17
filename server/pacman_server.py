@@ -58,6 +58,7 @@ class Ghost(Entity):
         self.mode = GhostMode.NORMAL
         self.color = color
         self.active = False
+        self.inactive_time = 0
         self.just_eaten = False
     
     def state(self):
@@ -65,6 +66,7 @@ class Ghost(Entity):
         state['mode'] = self.mode
         state['color'] = self.color
         state['active'] = self.active
+        state['inactiveTime'] = self.inactive_time*1000
         state['justEaten'] = self.just_eaten
         return state
 
@@ -123,7 +125,6 @@ class Game(threading.Thread):
     def initialize_level(self):
         self.death = False
         pacman, ghosts = self.entities[0], self.entities[1:]
-        pacman.active = True
         pacman.facing = Direction.NONE
         pacman.position = (15.5, 23)
         ghosts[0].position = (15.5, 11)
@@ -131,6 +132,12 @@ class Game(threading.Thread):
         ghosts[0].facing = Direction.NONE
         for ghost in ghosts[1:]:
             ghost.active = False
+            ghost.mode = GhostMode.NORMAL
+            ghost.facing = Direction.NONE
+            ghost.position = (15.5, 11)
+        ghosts[1].inactive_time = 2.5
+        ghosts[2].inactive_time = 1.5
+        ghosts[3].inactive_time = 3.5
 
     def publish(self, label, data = {}):
         for ent in self.entities:
@@ -189,7 +196,8 @@ class Game(threading.Thread):
 
     def update(self):
         for ent in self.entities:
-            self.update_ent(ent)
+            if ent.is_pacman or ent.active:
+                self.update_ent(ent)
         self.check_pacman()
         self.check_ghosts()
         self.check_ghost_pacman_collisions()
@@ -289,6 +297,14 @@ class Game(threading.Thread):
         for ghost in self.entities[1:]:
             if ghost.mode == GhostMode.DEAD and self.in_spawn(ghost):
                 ghost.mode = GhostMode.NORMAL
+                ghost.position = (15.5, 11)
+                ghost.active = False
+                ghost.inactive_time = 0.5
+            if not ghost.active:
+                ghost.inactive_time -= self.dt
+                if ghost.inactive_time < 0:
+                    self.send_update = True
+                    ghost.active = True
 
     def in_spawn(self, ent):
         x, y = ent.round_position()
@@ -296,6 +312,8 @@ class Game(threading.Thread):
 
     def check_ghost_pacman_collisions(self):
         for ghost in self.entities[1:]:
+            if not ghost.active:
+                continue
             ghost.just_eaten = False
             pp, gp = self.entities[0].position, ghost.position
             if abs(gp[0] - pp[0]) + abs(gp[1] - pp[1]) < 1.0:
