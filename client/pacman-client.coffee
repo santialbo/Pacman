@@ -215,7 +215,12 @@ class Game
     dx = [[0, 0], [-1, 0], [0, -1], [1, 0], [0, 1]][player.facing]
     x = Math.round(player.position[0] + dx[0])
     y = Math.round(player.position[1] + dx[1])
-    return @cells[y][x] != '#'
+    c = @cells[y][x]
+    free_move = [' ', 'o', 'O', 's', '@']
+    return c in free_move or (c >= '0' and c <= '9') or
+           (c == '|' and not player.pacman and
+            ((player.mode == 2 and player.facing == 4) or
+             (player.mode == 0 and player.facing == 2)))
 
   move: (player) =>
     dt = new Date().getTime() - @state.timestamp

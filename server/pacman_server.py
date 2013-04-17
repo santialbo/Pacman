@@ -128,6 +128,7 @@ class Game(threading.Thread):
         pacman.position = (15.5, 23)
         ghosts[0].position = (15.5, 11)
         ghosts[0].active = True
+        ghosts[0].facing = Direction.NONE
         for ghost in ghosts[1:]:
             ghost.active = False
 
@@ -190,6 +191,7 @@ class Game(threading.Thread):
         for ent in self.entities:
             self.update_ent(ent)
         self.check_pacman()
+        self.check_ghosts()
         self.check_ghost_pacman_collisions()
         if self.pill_time > 0:
             self.pill_time -= self.dt
@@ -226,7 +228,9 @@ class Game(threading.Thread):
             if self.can_go(ent, ent.facing):
                 self.move(ent, ent.facing)
             else:
-                ent.moving = False
+                if ent.moving:
+                    self.send_update = True
+                    ent.moving = False
                 ent.position = ent.round_position()
 
     def check_portal(self, ent):
@@ -241,7 +245,12 @@ class Game(threading.Thread):
     def can_go(self, ent, direction):
         dx = [[-1, 0], [0, -1], [1, 0], [0, 1]][direction - 1]
         x, y = ent.round_position(dx[0], dx[1])
-        return self.cells[y][x] != '#'
+        c = self.cells[y][x]
+        free_move = [' ', 'o', 'O', 's', '1', '@']
+        return c in free_move or c.isdigit() or \
+            (c == '|' and not ent.is_pacman and \
+            ((ent.mode == GhostMode.DEAD and direction == Direction.DOWN) or \
+             (ent.mode == GhostMode.NORMAL and direction == Direction.UP)))
         
     def move(self, ent, direction):
         speed = ent.speed
@@ -275,6 +284,15 @@ class Game(threading.Thread):
             self.score += 50
             self.send_update = True
             self.set_ghost_vulnerable()
+
+    def check_ghosts(self):
+        for ghost in self.entities[1:]:
+            if ghost.mode == GhostMode.DEAD and self.in_spawn(ghost):
+                ghost.mode = GhostMode.NORMAL
+
+    def in_spawn(self, ent):
+        x, y = ent.round_position()
+        return self.cells[y][x] == '@'
 
     def check_ghost_pacman_collisions(self):
         for ghost in self.entities[1:]:
