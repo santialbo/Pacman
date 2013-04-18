@@ -286,6 +286,7 @@ class Game
     @drawCookies ctx
     @drawPacman ctx
     @drawGhosts ctx
+    @drawMask ctx
     @drawHUD ctx
     if not @state.running
       @textWriter.write ctx, "ready!", WIDTH/2, 162, "center"
@@ -364,11 +365,15 @@ class Game
         s = @animationsPool["ghost_" + c[ghost.color] + "_" + dir].requestSprite()
         @drawSpriteInPosition ctx, s, x, y
 
-  drawSpriteInPosition: (ctx, s, x, y) ->
+  coordinateFromPosition: (x, y) ->
     [l, t, r, b] = [12, 12, 221, 244] # manually calibrated
-    x = Math.round(4 + ( l+ (r - l)*(x - 3)/(COLS - 6)) - s.width()/2)
-    y = Math.round(26 + (t + (b - t)*(y - 1)/(ROWS - 2)) - s.height()/2)
-    s.draw ctx, x, y
+    x = Math.round(4 + ( l+ (r - l)*(x - 3)/(COLS - 6)))
+    y = Math.round(26 + (t + (b - t)*(y - 1)/(ROWS - 2)))
+    return [x, y]
+
+  drawSpriteInPosition: (ctx, s, x, y) ->
+    [x, y] = @coordinateFromPosition x, y
+    s.draw ctx, x - Math.round(s.width()/2), y - Math.round(s.height()/2)
       
   drawMaze: (ctx) ->
     ctx.fillStyle = '#000'
@@ -388,6 +393,24 @@ class Game
           @drawSpriteInPosition ctx, s, x, y
         else if @cells[y][x] == "O"
           @drawSpriteInPosition ctx, p, x, y
+
+  drawMask: (ctx) ->
+    visionRadius = 50*SCALE
+    if @identity > 0
+      [x, y] = @me().position
+      [x, y] = @coordinateFromPosition x, y
+      mask = document.createElement 'canvas'
+      mask.width = @canvas.width
+      mask.height = @canvas.height
+      ctx2 = mask.getContext '2d'
+      ctx2.fillStyle = '#000'
+      ctx2.fillRect 0, 0, WIDTH*SCALE, HEIGHT*SCALE
+      ctx2.globalCompositeOperation = 'xor'
+      ctx2.arc x, y, visionRadius, 0, Math.PI*2
+      ctx2.arc x - WIDTH*SCALE - 12, y, visionRadius, 0, Math.PI*2
+      ctx2.arc x + WIDTH*SCALE + 12, y, visionRadius, 0, Math.PI*2
+      ctx2.fill()
+      ctx.drawImage mask, 0, 0
   
   drawHUD: (ctx) ->
     # scores
