@@ -89,6 +89,7 @@ class Game(threading.Thread):
         self.portals = {}
         self.pause_time = 0
         self.bonus = 100
+        self.last_pill_eaten = None
         self.load_level()
         self.create_players(clients)
         super(Game, self).__init__()
@@ -292,6 +293,10 @@ class Game(threading.Thread):
                 speed *= 0.8
             else:
                 speed *= 2
+        else:
+            if self.last_pill_eaten:
+                if time.time() - self.last_pill_eaten < 0.2:
+                    speed *= 0.8
         dx = [[-1, 0], [0, -1], [1, 0], [0, 1]][direction - 1]
         if dx[0] == 0:
             x = round(ent.position[0])
@@ -305,6 +310,7 @@ class Game(threading.Thread):
     def check_pacman(self):
         x, y = self.entities[0].round_position()
         if self.cells[y][x] == 'o':
+            self.last_pill_eaten = time.time()
             self.cells[y][x] = ' '
             self.score[self.player_map[0]] += 10
             self.send_update = True

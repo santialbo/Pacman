@@ -242,6 +242,11 @@ class Game
         speed *= 0.8
       else if player.mode == 2
         speed *= 2
+    else
+      [x, y] = [Math.round(player.position[0]), Math.round(player.position[1])]
+      if @cells[y][x] == 'o' or @time() - @last_pill_time < 200
+        @last_pill_time = @time()
+        speed *= 0.8
     dx = [[0, 0], [-1, 0], [0, -1], [1, 0], [0, 1]][player.facing]
     x = player.position[0] + dx[0]*speed*dt/1000
     y = player.position[1] + dx[1]*speed*dt/1000
