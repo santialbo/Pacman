@@ -115,7 +115,7 @@ class Game(threading.Thread):
         return None
 
     def create_players(self, clients):
-        #shuffle(self.player_map)
+        shuffle(self.player_map)
         self.entities = [Pacman(clients[self.player_map[0]]),
                          Ghost(clients[self.player_map[1]], GhostColor.RED),
                          Ghost(clients[self.player_map[2]], GhostColor.BLUE),
@@ -123,8 +123,12 @@ class Game(threading.Thread):
                          Ghost(clients[self.player_map[4]], GhostColor.PINK)]
 
     def send_identity(self):
+        inverse = [0] * len(self.player_map)
+        for i, p in enumerate(self.player_map):
+            inverse[p] = i
+        print self.clients
         for i, client in enumerate(self.clients):
-            msg = {'label': "identity", 'data': self.player_map[i]}
+            msg = {'label': "identity", 'data': inverse[i]}
             client.write_message(json.dumps(msg))
 
     def initialize_level(self):
@@ -292,14 +296,17 @@ class Game(threading.Thread):
         ent.moving = True
 
     def check_pacman(self):
+        inverse = [0] * len(self.player_map)
+        for i, p in enumerate(self.player_map):
+            inverse[p] = i
         x, y = self.entities[0].round_position()
         if self.cells[y][x] == 'o':
             self.cells[y][x] = ' '
-            self.score[self.player_map[0]] += 10
+            self.score[inverse[0]] += 10
             self.send_update = True
         elif self.cells[y][x] == 'O':
             self.cells[y][x] = ' '
-            self.score[self.player_map[0]] += 50
+            self.score[inverse[0]] += 50
             self.send_update = True
             self.set_ghost_vulnerable()
 

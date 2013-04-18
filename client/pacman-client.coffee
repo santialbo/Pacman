@@ -297,8 +297,7 @@ class Game
     @state.players.filter (player) -> not player.pacman
 
   me: () =>
-    if @identity == 0 then @pacman()
-    else (@ghosts().filter (ghost) => ghost.color == @identity - 1)[0]
+    @state.players[@identity]
 
   drawPacman: (ctx) ->
     d = ["left", "left", "up", "right", "down"]
