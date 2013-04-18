@@ -13,6 +13,8 @@ Direction = enum(NONE = 0, LEFT = 1, UP = 2, RIGHT = 3, DOWN = 4)
 GhostMode = enum(NORMAL = 0, VULNERABLE = 1, DEAD = 2)
 GhostColor = enum(RED = 0, BLUE = 1, ORANGE = 2, PINK = 3)
 
+LEVEL_PATH = os.path.join(os.path.dirname(__file__), 'level')
+
 class Entity(object):
 
     def __init__(self, client):
@@ -74,23 +76,25 @@ class Ghost(Entity):
 class Game(threading.Thread):
 
     def __init__(self, clients):
+        self.clients = clients
         self.server = server
         self.running = False
         self.dt = 1.0/30
         self.pill_time = 0
         self.lives = 3
         self.level = 1
-        self.score = 0
+        self.score = [0, 0, 0, 0, 0]
+        self.player_map = [0, 1, 2, 3, 4]
         self.send_update = False
         self.portals = {}
         self.pause_time = 0
         self.bonus = 100
-        self.load_level(os.path.join(os.path.dirname(__file__), 'level'))
-        self.assign_players(clients)
+        self.load_level()
+        self.create_players(clients)
         super(Game, self).__init__()
 
-    def load_level(self, file_name):
-        with open(file_name) as f:
+    def load_level(self):
+        with open(LEVEL_PATH) as f:
             lines = f.readlines()
         self.cells = [list(line[:-1]) for line in lines]
         # Find portals
@@ -110,17 +114,18 @@ class Game(threading.Thread):
                 return ent
         return None
 
-    def assign_players(self, clients):
-        #shuffle(clients)
-        self.entities = [Pacman(clients[0]),
-                         Ghost(clients[1], GhostColor.RED),
-                         Ghost(clients[2], GhostColor.BLUE),
-                         Ghost(clients[3], GhostColor.ORANGE),
-                         Ghost(clients[4], GhostColor.PINK)]
-        for ent in self.entities:
-            identity = 0 if ent.is_pacman else ent.color + 1
-            msg = {'label': "identity", 'data': identity}
-            ent.client.write_message(json.dumps(msg))
+    def create_players(self, clients):
+        #shuffle(self.player_map)
+        self.entities = [Pacman(clients[self.player_map[0]]),
+                         Ghost(clients[self.player_map[1]], GhostColor.RED),
+                         Ghost(clients[self.player_map[2]], GhostColor.BLUE),
+                         Ghost(clients[self.player_map[3]], GhostColor.ORANGE),
+                         Ghost(clients[self.player_map[4]], GhostColor.PINK)]
+
+    def send_identity(self):
+        for i, client in enumerate(self.clients):
+            msg = {'label': "identity", 'data': self.player_map[i]}
+            client.write_message(json.dumps(msg))
 
     def initialize_level(self):
         self.death = False
@@ -162,6 +167,7 @@ class Game(threading.Thread):
 
     def run(self):
         self.initialize_level()
+        self.send_identity()
         time.sleep(1.0) # give time before starting
         self.publish("ready")
         self.running = True
@@ -190,6 +196,9 @@ class Game(threading.Thread):
                 self.send_game_state()
             # sleep remaining time
             time.sleep(itime + self.dt - time.time())
+
+        if self.lives == 0:
+            self.lives == 3
 
         if self.running:
             self.run()
@@ -286,11 +295,11 @@ class Game(threading.Thread):
         x, y = self.entities[0].round_position()
         if self.cells[y][x] == 'o':
             self.cells[y][x] = ' '
-            self.score += 10
+            self.score[self.player_map[0]] += 10
             self.send_update = True
         elif self.cells[y][x] == 'O':
             self.cells[y][x] = ' '
-            self.score += 50
+            self.score[self.player_map[0]] += 50
             self.send_update = True
             self.set_ghost_vulnerable()
 
@@ -323,7 +332,7 @@ class Game(threading.Thread):
                     ghost.just_eaten = True
                     self.pause_time = 1
                     self.bonus *= 2
-                    self.score += self.bonus
+                    self.score[self.player_map[0]] += self.bonus
                     self.send_update = True
                 elif ghost.mode == GhostMode.NORMAL:
                     self.death = True

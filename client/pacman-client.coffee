@@ -288,7 +288,7 @@ class Game
     @drawGhosts ctx
     @drawHUD ctx
     if not @state.running
-      @textWriter.write ctx, "ready!", WIDTH/2, 166, "center"
+      @textWriter.write ctx, "ready!", WIDTH/2, 162, "center"
 
   pacman: () ->
     (@state.players.filter (player) -> player.pacman)[0]
@@ -365,8 +365,6 @@ class Game
         s = @animationsPool["ghost_" + c[ghost.color] + "_" + dir].requestSprite()
         @drawSpriteInPosition ctx, s, x, y
 
-
-
   drawSpriteInPosition: (ctx, s, x, y) ->
     [l, t, r, b] = [12, 12, 221, 244] # manually calibrated
     x = Math.round(4 + ( l+ (r - l)*(x - 3)/(COLS - 6)) - s.width()/2)
@@ -393,20 +391,27 @@ class Game
           @drawSpriteInPosition ctx, p, x, y
   
   drawHUD: (ctx) ->
-    # score
-    [x, y] = [40, 4]
-    if @time()%500 < 250
-      @textWriter.write ctx, "1up", x, y, 'center'
-    y += 10
-    @textWriter.write ctx, (@state.score + ""), x, y, 'center'
+    # scores
+    dx = 45
+    x = WIDTH/2 - dx*2
+    for i in [0...5]
+      y = 4
+      if @time()%500 < 250
+        @textWriter.write ctx, (i + 1) + "up", x, y, 'center'
+      y += 10
+      @textWriter.write ctx, (@state.score[i] + ""), x, y, 'center'
+      x += dx
+
     # identity
-    [x, y] = [WIDTH - 44, 4]
-    @textWriter.write ctx, "you", x, y, 'center'
+    [x, y] = [WIDTH - 70, HEIGHT - 4 - 20 + 3]
+    @textWriter.write ctx, "you are", x, y, 'center'
     y += 10
-    @textWriter.write ctx, "are", x, y, 'center'
-    [x, y] = [WIDTH - 24, 6]
+    @textWriter.write ctx, "player " + (@identity + 1), x, y, 'center'
     e = ["pacman", "ghost_red", "ghost_blue", "ghost_orange", "ghost_pink"][@identity]
-    @animationsPool[e + "_left_aux"].requestSprite().draw ctx, x, y
+    s = @animationsPool[e + "_left_aux"].requestSprite()
+    [x, y] = [WIDTH - 24, HEIGHT - 4 - s.height()]
+    s.draw ctx, x, y
+
     # lives
     s = @sprites.get("pacman_left_1")
     [x, y] = [24, HEIGHT - 4 - s.height()]
