@@ -96,6 +96,7 @@ class Game
   state: {}
   id: null
   identity: null
+  playerNumber: null
   
   constructor: (@canvas) ->
     @refTime = new Date().getTime()
@@ -156,6 +157,8 @@ class Game
       @id = msg.data
     else if msg.label == "identity"
       @identity = msg.data
+    else if msg.label == "playerNumber"
+      @playerNumber = msg.data
     else if msg.label == "numPlayers"
       @state.players = msg.data
     else if msg.label == "ready"
@@ -249,6 +252,8 @@ class Game
     msg = JSON.parse e.data
     if msg.label == "ready"
       @runGame()
+    else if msg.label == "identity"
+      @identity = msg.data
     else if msg.label == "go"
       @state.running = true
       @refTime = new Date().getTime()
@@ -439,7 +444,7 @@ class Game
     [x, y] = [WIDTH - 70, HEIGHT - 4 - 20 + 3]
     @textWriter.write ctx, "you are", x, y, 'center'
     y += 10
-    @textWriter.write ctx, "player " + (@identity + 1), x, y, 'center'
+    @textWriter.write ctx, "player " + (@playerNumber + 1), x, y, 'center'
     e = ["pacman", "ghost_red", "ghost_blue", "ghost_orange", "ghost_pink"][@identity]
     s = @animationsPool[e + "_left_aux"].requestSprite()
     [x, y] = [WIDTH - 24, HEIGHT - 4 - s.height()]

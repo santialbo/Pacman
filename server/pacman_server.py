@@ -17,10 +17,10 @@ LEVEL_PATH = os.path.join(os.path.dirname(__file__), 'level')
 
 class Entity(object):
 
-    def __init__(self, client):
+    def __init__(self):
         self.key_state = {'left': None, 'up': None, 'right': None, 'down': None}
         self.is_pacman = False
-        self.client = client
+        self.client = None
         self.position = (0.0, 0.0)
         self.moving = False
         self.speed = 7
@@ -43,8 +43,8 @@ class Entity(object):
 
 class Pacman(Entity):
 
-    def __init__(self, client):
-        super(Pacman, self).__init__(client)
+    def __init__(self):
+        super(Pacman, self).__init__()
         self.is_pacman = True
 
     def state(self):
@@ -54,8 +54,8 @@ class Pacman(Entity):
 
 class Ghost(Entity):
 
-    def __init__(self, client, color):
-        super(Ghost, self).__init__(client)
+    def __init__(self, color):
+        super(Ghost, self).__init__()
         self.is_pacman = False
         self.mode = GhostMode.NORMAL
         self.color = color
@@ -116,20 +116,25 @@ class Game(threading.Thread):
 
     def create_players(self, clients):
         shuffle(self.player_map)
-        self.entities = [Pacman(clients[self.player_map[0]]),
-                         Ghost(clients[self.player_map[1]], GhostColor.RED),
-                         Ghost(clients[self.player_map[2]], GhostColor.BLUE),
-                         Ghost(clients[self.player_map[3]], GhostColor.ORANGE),
-                         Ghost(clients[self.player_map[4]], GhostColor.PINK)]
+        self.entities = [Pacman(), Ghost(GhostColor.RED), Ghost(GhostColor.BLUE),
+                         Ghost(GhostColor.ORANGE), Ghost(GhostColor.PINK)]
+        for i, client in enumerate(self.clients):
+            if client.active:
+                msg = {'label': "playerNumber", 'data': i}
+                client.write_message(json.dumps(msg))
+    
+    def assign_clients(self):
+        for i, ent in enumerate(self.entities):
+            ent.client = self.clients[self.player_map[i]]
 
     def send_identity(self):
         inverse = [0] * len(self.player_map)
         for i, p in enumerate(self.player_map):
             inverse[p] = i
-        print self.clients
         for i, client in enumerate(self.clients):
-            msg = {'label': "identity", 'data': inverse[i]}
-            client.write_message(json.dumps(msg))
+            if client.active:
+                msg = {'label': "identity", 'data': inverse[i]}
+                client.write_message(json.dumps(msg))
 
     def initialize_level(self):
         self.death = False
@@ -171,6 +176,7 @@ class Game(threading.Thread):
 
     def run(self):
         self.initialize_level()
+        self.assign_clients()
         self.send_identity()
         time.sleep(1.0) # give time before starting
         self.publish("ready")
@@ -297,17 +303,14 @@ class Game(threading.Thread):
         ent.moving = True
 
     def check_pacman(self):
-        inverse = [0] * len(self.player_map)
-        for i, p in enumerate(self.player_map):
-            inverse[p] = i
         x, y = self.entities[0].round_position()
         if self.cells[y][x] == 'o':
             self.cells[y][x] = ' '
-            self.score[inverse[0]] += 10
+            self.score[self.player_map[0]] += 10
             self.send_update = True
         elif self.cells[y][x] == 'O':
             self.cells[y][x] = ' '
-            self.score[inverse[0]] += 50
+            self.score[self.player_map[0]] += 50
             self.send_update = True
             self.set_ghost_vulnerable()
 
@@ -329,7 +332,7 @@ class Game(threading.Thread):
         return self.cells[y][x] == '@'
 
     def check_ghost_pacman_collisions(self):
-        for ghost in self.entities[1:]:
+        for i, ghost in enumerate(self.entities[1:]):
             if not ghost.active:
                 continue
             ghost.just_eaten = False
@@ -346,6 +349,10 @@ class Game(threading.Thread):
                     self.death = True
                     self.pause_time = 2
                     self.send_update = True
+                    self.score[self.player_map[i + 1]] += 500
+                    aux = self.player_map[0]
+                    self.player_map[0] = self.player_map[i + 1]
+                    self.player_map[i + 1] = aux
 
     def set_ghost_vulnerable(self):
         for ghost in self.entities[1:]:
