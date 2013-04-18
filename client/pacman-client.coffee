@@ -403,13 +403,24 @@ class Game
       mask.width = @canvas.width
       mask.height = @canvas.height
       ctx2 = mask.getContext '2d'
-      ctx2.fillStyle = '#000'
+      if not @state.running
+        alpha = Math.min(@time()/1000, 1)
+      else if @state.death
+        alpha = (1 - @time()/1000)*(@time() < 1000)
+      else
+        alpha = 1
+      ctx2.fillStyle = 'rgb(0,0,0)'
       ctx2.fillRect 0, 0, WIDTH*SCALE, HEIGHT*SCALE
       ctx2.globalCompositeOperation = 'xor'
       ctx2.arc x, y, visionRadius, 0, Math.PI*2
       ctx2.arc x - WIDTH*SCALE - 12, y, visionRadius, 0, Math.PI*2
       ctx2.arc x + WIDTH*SCALE + 12, y, visionRadius, 0, Math.PI*2
       ctx2.fill()
+      imageData = ctx2.getImageData(0, 0, mask.width, mask.height)
+      for i in [0...imageData.data.length]
+        if i % 4 == 3
+          imageData.data[i] = if imageData.data[i] > 0 then Math.round(alpha*255) else 0
+      ctx2.putImageData imageData, 0, 0
       ctx.drawImage mask, 0, 0
   
   drawHUD: (ctx) ->
