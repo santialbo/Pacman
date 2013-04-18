@@ -263,6 +263,7 @@ class Game(threading.Thread):
             dy = y - ent.position[1]
             if dx*ds[0] > 0 or dy*ds[1] > 0:
                 ent.position = self.portals[(x, y)]
+                self.send_update = True
 
     def can_go(self, ent, direction):
         dx = [[-1, 0], [0, -1], [1, 0], [0, 1]][direction - 1]
