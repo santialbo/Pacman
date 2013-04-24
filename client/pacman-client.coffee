@@ -1,15 +1,7 @@
-window.SCALE = 1
-window.WIDTH = 4 + 224 + 4
-window.HEIGHT = 4 + 22 + 248 + 20 + 4
-window.FPS = 30
-window.ROWS = 31
-window.COLS = 32
-window.SERVER = "ws://localhost:8888/pacman" 
-
 class Sprite
   # Sprite contains a reference to the spritesheet and the necessary
   # information to draw the actual sprite
-  constructor: (@name, @image, @info) ->
+  constructor: (@name, @image, @info, @scale) ->
   
   width: () -> @info.sourceSize.w
   height: () -> @info.sourceSize.h
@@ -17,9 +9,8 @@ class Sprite
   draw: (ctx, x, y) ->
     x += @info.spriteSourceSize.x
     y += @info.spriteSourceSize.y
-    ctx.drawImage @image, @info.frame.x, @info.frame.y,
-      @info.frame.w, @info.frame.h,
-      x*SCALE, y*SCALE, @info.frame.w*SCALE, @info.frame.h*SCALE
+    ctx.drawImage @image, @info.frame.x, @info.frame.y, @info.frame.w, @info.frame.h,
+      x*@scale, y*@scale, @info.frame.w*@scale, @info.frame.h*@scale
 
 
 class SpriteDict
@@ -28,12 +19,12 @@ class SpriteDict
   sprite: null
   info: null
   
-  constructor: (spriteFile, infoFile, callback) ->
+  constructor: (spriteFile, infoFile, @scale, callback) ->
     @sprite = new Image()
     @sprite.src = spriteFile
     $.getJSON infoFile, (json) => @info = json; callback()
 
-  get: (name) -> new Sprite(@name, @sprite, @info[name])
+  get: (name) -> new Sprite(@name, @sprite, @info[name], @scale)
 
 
 class SpriteTextWriter
@@ -98,28 +89,30 @@ class Game
   identity: null
   playerNumber: null
   
-  constructor: (@canvas) ->
+  constructor: (@canvas, @gw, @server) ->
     @refTime = new Date().getTime()
     @setup()
   
   time: () -> new Date().getTime() - @refTime
 
   setup: () ->
-    @canvas.height = HEIGHT*SCALE
-    @canvas.width = WIDTH*SCALE
+    @canvas.height = @gw.height*@gw.scale
+    @canvas.width = @gw.width*@gw.scale
     @loadLevel()
     
   loadLevel: () ->
-    $.get 'res/level', (data) => 
+    $.get 'res/level', (data) =>
       @cells = (data.split "\n").map (row) -> row.split ""
       @cells.pop()
       @loadSprites()
 
   loadSprites: () =>
-    @sprites = new SpriteDict 'res/sprites.png', 'res/sprites.json', @loadAnimations
+    @sprites =
+      new SpriteDict 'res/sprites.png', 'res/sprites.json', @gw.scale, @loadAnimations
 
   loadAnimations: () =>
-    @animations = new AnimationDict @sprites, 'res/animations.json', FPS, @createObjects
+    @animations =
+      new AnimationDict @sprites, 'res/animations.json', @gw.fps, @createObjects
 
   createObjects: () =>
     @textWriter = new SpriteTextWriter(@sprites)
@@ -138,7 +131,7 @@ class Game
 
   connect: () ->
     # Connect to server and proceed to the waiting room
-    @connection = new WebSocket(SERVER)
+    @connection = new WebSocket(@server)
     @connection.onmessage = @waitingRoomMsg
     @connection.onopen = @runWaitingRoom
 
@@ -149,7 +142,7 @@ class Game
   ############### Waiting screen ###############
 
   runWaitingRoom: () =>
-    @interval = setInterval @drawWaitingRoom, (1000/FPS)
+    @interval = setInterval @drawWaitingRoom, (1000/@gw.fps)
 
   waitingRoomMsg: (e) =>
     msg = JSON.parse(e.data)
@@ -164,21 +157,25 @@ class Game
     else if msg.label == "ready"
       @runGame()
 
+  clearCanvas: (ctx) =>
+    ctx.fillStyle = 'rgb(0,0,0)'
+    ctx.fillRect 0, 0, @gw.width*@gw.scale, @gw.height*@gw.scale
+
   drawWaitingRoom: () =>
     ctx = @canvas.getContext '2d'
-    ctx.fillRect 0, 0, WIDTH*SCALE, HEIGHT*SCALE
+    @clearCanvas ctx
     s = @sprites.get("title")
     y = 60
-    s.draw ctx, WIDTH/2-s.width()/2, y
+    s.draw ctx, @gw.width/2-s.width()/2, y
     y += s.height()+ 10
-    @textWriter.write ctx, "waiting for players", WIDTH/2, y , "center"
+    @textWriter.write ctx, "waiting for players", @gw.width/2, y , "center"
     y += 20
     if @time()%2000 < 1200
-      @textWriter.write ctx, @state.players + " of 5", WIDTH/2, y, "center"
+      @textWriter.write ctx, @state.players + " of 5", @gw.width/2, y, "center"
 
     # Going right
     y = 200
-    x = -10 + (@time()%10000)/3000*(WIDTH + 20)
+    x = -10 + (@time()%10000)/3000*(@gw.width + 20)
     @animationsPool["pacman_right"].requestSprite().draw ctx, x, y
     x -= 60
     for color in ["red", "blue", "pink", "orange"]
@@ -186,7 +183,7 @@ class Game
       x -= 18
 
     # Going left
-    x = (7800 - @time()%10000)/3000*(WIDTH+20)
+    x = (7800 - @time()%10000)/3000*(@gw.width+20)
     s = @animationsPool["ghost_dead_blue"].requestSprite()
     for i in [0...4]
       s.draw ctx, x, y
@@ -205,7 +202,7 @@ class Game
     @interval = setInterval =>
         @update()
         @drawGame()
-    , (1000/FPS)
+    , (1000/@gw.fps)
 
   update: () =>
     if not @state.pause
@@ -213,7 +210,7 @@ class Game
         if @canMove player
           @move player
         if @state.running and not player.pacman and not player.active
-          player.inactiveTime -= 1000/FPS
+          player.inactiveTime -= 1000/@gw.fps
           if player.inactiveTime < 0
             player.active
             player.position = [15.5, 11]
@@ -298,8 +295,6 @@ class Game
     @drawGhosts ctx
     @drawMask ctx
     @drawHUD ctx
-    if not @state.running
-      @textWriter.write ctx, "ready!", WIDTH/2, 162, "center"
 
   pacman: () ->
     (@state.players.filter (player) -> player.pacman)[0]
@@ -314,7 +309,7 @@ class Game
     d = ["left", "left", "up", "right", "down"]
     c = ["red", "blue", "orange", "pink"]
     pacman = @pacman()
-    if @state.death 
+    if @state.death
       if @time() < 1000
         s = @sprites.get("pacman_" + d[pacman.facing] + "_1")
       else
@@ -377,8 +372,8 @@ class Game
 
   coordinateFromPosition: (x, y) ->
     [l, t, r, b] = [12, 12, 221, 244] # manually calibrated
-    x = Math.round(4 + ( l+ (r - l)*(x - 3)/(COLS - 6)))
-    y = Math.round(26 + (t + (b - t)*(y - 1)/(ROWS - 2)))
+    x = Math.round(4 + ( l+ (r - l)*(x - 3)/(@gw.cols - 6)))
+    y = Math.round(26 + (t + (b - t)*(y - 1)/(@gw.rows - 2)))
     return [x, y]
 
   drawSpriteInPosition: (ctx, s, x, y) ->
@@ -387,8 +382,8 @@ class Game
       
   drawMaze: (ctx) ->
     ctx.fillStyle = '#000'
-    ctx.fillRect 0, 0, WIDTH*SCALE, HEIGHT*SCALE
-    @sprites.get("maze").draw ctx, 4, 26, SCALE
+    ctx.fillRect 0, 0, @gw.width*@gw.scale, @gw.height*@gw.scale
+    @sprites.get("maze").draw ctx, 4, 26, @gw.scale
 
   drawCookies: (ctx) ->
     s = @sprites.get("cookie")
@@ -397,15 +392,15 @@ class Game
     else
       p = @sprites.get("pill")
 
-    for y in [1...ROWS - 1] by 1
-      for x in [3...COLS - 3] by 1
+    for y in [1...@gw.rows - 1] by 1
+      for x in [3...@gw.cols - 3] by 1
         if @cells[y][x] == "o"
           @drawSpriteInPosition ctx, s, x, y
         else if @cells[y][x] == "O"
           @drawSpriteInPosition ctx, p, x, y
 
   drawMask: (ctx) ->
-    visionRadius = 50*SCALE
+    visionRadius = 50*@gw.scale
     if @identity > 0
       [x, y] = @me().position
       [x, y] = @coordinateFromPosition x, y
@@ -419,12 +414,11 @@ class Game
         alpha = (1 - @time()/1000)*(@time() < 1000)
       else
         alpha = 1
-      ctx2.fillStyle = 'rgb(0,0,0)'
-      ctx2.fillRect 0, 0, WIDTH*SCALE, HEIGHT*SCALE
+      @clearCanvas ctx2
       ctx2.globalCompositeOperation = 'xor'
-      ctx2.arc x, y, visionRadius, 0, Math.PI*2
-      ctx2.arc x - WIDTH*SCALE - 12, y, visionRadius, 0, Math.PI*2
-      ctx2.arc x + WIDTH*SCALE + 12, y, visionRadius, 0, Math.PI*2
+      ctx2.arc x*@gw.scale, y*@gw.scale, visionRadius, 0, Math.PI*2
+      ctx2.arc x*@gw.scale - @gw.width*@gw.scale - 12, y, visionRadius, 0, Math.PI*2
+      ctx2.arc x*@gw.scale + @gw.width*@gw.scale + 12, y, visionRadius, 0, Math.PI*2
       ctx2.fill()
       imageData = ctx2.getImageData(0, 0, mask.width, mask.height)
       for i in [0...imageData.data.length]
@@ -436,7 +430,7 @@ class Game
   drawHUD: (ctx) ->
     # scores
     dx = 45
-    x = WIDTH/2 - dx*2
+    x = @gw.width/2 - dx*2
     for i in [0...5]
       y = 4
       if @time()%500 < 250
@@ -444,23 +438,43 @@ class Game
       y += 10
       @textWriter.write ctx, (@state.score[i] + ""), x, y, 'center'
       x += dx
+    if not @state.running
+      @textWriter.write ctx, "ready!", @gw.width/2, 162, "center"
 
     # identity
-    [x, y] = [WIDTH - 70, HEIGHT - 4 - 20 + 3]
+    [x, y] = [@gw.width - 70, @gw.height - @gw.margin - @gw.bottomMargin + 3]
     @textWriter.write ctx, "you are", x, y, 'center'
     y += 10
     @textWriter.write ctx, "player " + (@playerNumber + 1), x, y, 'center'
     e = ["pacman", "ghost_red", "ghost_blue", "ghost_orange", "ghost_pink"][@identity]
     s = @animationsPool[e + "_left_aux"].requestSprite()
-    [x, y] = [WIDTH - 24, HEIGHT - 4 - s.height()]
+    [x, y] = [@gw.width - 24, @gw.height - @gw.margin - s.height()]
     s.draw ctx, x, y
 
     # lives
     s = @sprites.get("pacman_left_1")
-    [x, y] = [24, HEIGHT - 4 - s.height()]
+    [x, y] = [24, @gw.height - @gw.margin - s.height()]
     for i in [0...@state.lives]
       s.draw ctx, x, y
       x += 20
 
+
 canvas = document.getElementById 'canvas'
-game = new Game(canvas)
+gameWindowInfo = {
+  'scale': 1,
+  'mazeWidth': 224,
+  'mazeHeight': 248,
+  'margin': 4,
+  'topMargin': 22,
+  'bottomMargin': 20,
+  'height': 4 + 22 + 248 + 20 + 4,
+  'width': 4 + 224 + 4,
+  'fps': 30,
+  'rows': 31,
+  'cols': 32,
+  }
+ip = null
+while ip == null
+  ip = window.prompt("Please, specify server ip.", "localhost:8888");
+server = "ws://" + ip + "/pacman"
+game = new Game(canvas, gameWindowInfo, server)
