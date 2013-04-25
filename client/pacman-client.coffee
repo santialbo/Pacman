@@ -18,13 +18,17 @@ class SpriteDict
   # It avoids the creation of multiple image objects by having only one.
   sprite: null
   info: null
-  
+  cache: {}
+
   constructor: (spriteFile, infoFile, @scale, callback) ->
     @sprite = new Image()
     @sprite.src = spriteFile
     $.getJSON infoFile, (json) => @info = json; callback()
 
-  get: (name) -> new Sprite(@name, @sprite, @info[name], @scale)
+  get: (name) ->
+    if @cache[name] == undefined
+      @cache[name] = new Sprite(@name, @sprite, @info[name], @scale)
+    @cache[name]
 
 
 class SpriteTextWriter
