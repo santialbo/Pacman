@@ -181,11 +181,11 @@ class Game(threading.Thread):
         self.initialize_level(LEVELS[self.level])
         self.assign_clients()
         self.send_identity()
-        time.sleep(1.0) # give time before starting
+        time.sleep(1) # give time before starting
         self.publish("ready")
         self.running = True
         self.send_game_state()
-        time.sleep(2.0) # give time before starting
+        time.sleep(2) # give time before starting
         self.publish("go")
         ticks_since_last_update = 0
         while self.running:
@@ -242,11 +242,13 @@ class Game(threading.Thread):
                     continue
                 if not ent.is_pacman and ent.mode == GhostMode.NORMAL \
                     and (i - ent.facing + 4) % 4 == 2:
-                    # ghosts can't go back unless it's the only way or are dead
-                    j = i - 2 if i > 2 else i + 2
-                    left = j - 1 if j > 1 else 4
-                    right = j + 1 if j < 4 else 1
-                    if (self.can_go(ent, j) or
+                    # A normal ghost is trying to go backwards, but
+                    # ghosts can't go backwards unless it's the only way
+                    # or they are dead.
+                    forwards = i - 2 if i > 2 else i + 2
+                    left = forwards - 1 if forwards > 1 else 4
+                    right = forwards + 1 if forwards < 4 else 1
+                    if (self.can_go(ent, forwards) or
                         self.can_go(ent, left) or
                         self.can_go(ent, right)):
                         continue
