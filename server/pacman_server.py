@@ -1,6 +1,7 @@
 from tornado import httpserver, websocket, ioloop, web
 from uuid import uuid1
 from random import shuffle
+from collections import defaultdict
 import json
 import threading, time
 import os
@@ -69,6 +70,28 @@ class Ghost(Entity):
         return state
 
 
+def load_level(level_path):
+    with open(level_path) as f:
+        lines = f.readlines()
+    cells = [list(line.strip()) for line in lines]
+    # Find portals
+    portalmap = {}
+    portals = defaultdict(list)
+    for i, line in enumerate(cells):
+        for j, cell in enumerate(line):
+            if cell.isdigit():
+                portals[int(cell)].append((j, i))
+    for (p1, p2) in portals.values():
+        portalmap[p1] = p2
+        portalmap[p2] = p1
+    return {"cells": cells, "portals": portalmap}
+
+
+LEVELS = {1: {"map": load_level(LEVEL_PATH),
+              "pacman_position": (15.5, 23),
+              "ghost_position" : (15.5, 11)}}
+
+
 class Game(threading.Thread):
 
     def __init__(self, clients):
@@ -82,30 +105,15 @@ class Game(threading.Thread):
         self.player_map = [0, 1, 2, 3, 4]
         shuffle(self.player_map)
         self.send_update = False
-        self.portals = {}
         self.pause_time = 0
         self.bonus = 100
         self.last_pill_eaten = None
         self.entities = [Pacman(), Ghost(GhostColor.RED), Ghost(GhostColor.BLUE),
                          Ghost(GhostColor.ORANGE), Ghost(GhostColor.PINK)]
-        self.load_level()
+        self.initialize_level(LEVELS[self.level])
         self.assign_player_numbers()
         super(Game, self).__init__()
 
-    def load_level(self):
-        with open(LEVEL_PATH) as f:
-            lines = f.readlines()
-        self.cells = [list(line.strip()) for line in lines]
-        # Find portals
-        portals = [[]] * 10
-        for i, line in enumerate(self.cells):
-            for j, cell in enumerate(line):
-                if cell.isdigit():
-                    portals[int(cell)].append((j, i))
-        for portal in portals:
-            if portal:
-                self.portals[portal[0]] = portal[1]
-                self.portals[portal[1]] = portal[0]
 
     def player_by_id(self, id):
         for ent in self.entities:
@@ -132,19 +140,18 @@ class Game(threading.Thread):
                 msg = {'label': "identity", 'data': inverse[i]}
                 client.write_message(json.dumps(msg))
 
-    def initialize_level(self):
+    def initialize_level(self, level):
+        self.cells = level["map"]["cells"]
+        self.portals = level["map"]["portals"]
         self.death = False
         pacman, ghosts = self.entities[0], self.entities[1:]
         pacman.facing = Direction.NONE
-        pacman.position = (15.5, 23)
-        ghosts[0].position = (15.5, 11)
-        ghosts[0].active = True
-        ghosts[0].facing = Direction.NONE
-        for ghost in ghosts[1:]:
+        pacman.position = level["pacman_position"]
+        for ghost in ghosts:
             ghost.active = False
-            ghost.mode = GhostMode.NORMAL
             ghost.facing = Direction.NONE
-            ghost.position = (15.5, 11)
+            ghost.position = level["ghost_position"]
+        ghosts[0].active = True
         ghosts[1].inactive_time = 2.5
         ghosts[2].inactive_time = 1.5
         ghosts[3].inactive_time = 3.5
@@ -171,7 +178,7 @@ class Game(threading.Thread):
          }
 
     def run(self):
-        self.initialize_level()
+        self.initialize_level(LEVELS[self.level])
         self.assign_clients()
         self.send_identity()
         time.sleep(1.0) # give time before starting
