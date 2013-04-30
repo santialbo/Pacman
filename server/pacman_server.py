@@ -47,10 +47,6 @@ class Pacman(Entity):
         super(Pacman, self).__init__()
         self.is_pacman = True
 
-    def state(self):
-        state = super(Pacman, self).state()
-        return state
-    
 
 class Ghost(Entity):
 
@@ -62,7 +58,7 @@ class Ghost(Entity):
         self.active = False
         self.inactive_time = 0
         self.just_eaten = False
-    
+
     def state(self):
         state = super(Ghost, self).state()
         state['mode'] = self.mode
@@ -123,7 +119,7 @@ class Game(threading.Thread):
             if client.active:
                 msg = {'label': "playerNumber", 'data': i}
                 client.write_message(json.dumps(msg))
-    
+
     def assign_clients(self):
         for i, ent in enumerate(self.entities):
             ent.client = self.clients[self.player_map[i]]
@@ -159,7 +155,7 @@ class Game(threading.Thread):
             if ent.client.active:
                 msg = {'label': label, 'data': data}
                 ent.client.write_message(json.dumps(msg))
-    
+
     def send_game_state(self):
         self.publish("gameState", self.game_state())
 
@@ -281,7 +277,7 @@ class Game(threading.Thread):
             (c == '|' and not ent.is_pacman and \
             ((ent.mode == GhostMode.DEAD and direction == Direction.DOWN) or \
              (ent.mode == GhostMode.NORMAL and direction == Direction.UP)))
-        
+
     def move(self, ent, direction):
         speed = ent.speed
         if not ent.is_pacman:
@@ -374,7 +370,7 @@ class Game(threading.Thread):
 
     def all_offline(self):
         actives = [ent.client.active for ent in self.entities]
-        return not any(actives)        
+        return not any(actives)
 
 class PacmanServer:
     clients = {}
