@@ -93,9 +93,9 @@ class Game(threading.Thread):
     def load_level(self):
         with open(LEVEL_PATH) as f:
             lines = f.readlines()
-        self.cells = [list(line[:-1]) for line in lines]
+        self.cells = [line.strip() for line in lines]
         # Find portals
-        portals = [[] for i in range(10)]
+        portals = [[]] * 10
         for i, line in enumerate(self.cells):
             for j, cell in enumerate(line):
                 if cell.isdigit():
