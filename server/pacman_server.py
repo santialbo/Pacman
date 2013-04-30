@@ -73,7 +73,6 @@ class Game(threading.Thread):
 
     def __init__(self, clients):
         self.clients = clients
-        self.server = server
         self.running = False
         self.dt = 1.0/30
         self.pill_time = 0
