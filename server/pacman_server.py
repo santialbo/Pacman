@@ -80,13 +80,16 @@ class Game(threading.Thread):
         self.level = 1
         self.score = [0, 0, 0, 0, 0]
         self.player_map = [0, 1, 2, 3, 4]
+        shuffle(self.player_map)
         self.send_update = False
         self.portals = {}
         self.pause_time = 0
         self.bonus = 100
         self.last_pill_eaten = None
+        self.entities = [Pacman(), Ghost(GhostColor.RED), Ghost(GhostColor.BLUE),
+                         Ghost(GhostColor.ORANGE), Ghost(GhostColor.PINK)]
         self.load_level()
-        self.create_players(clients)
+        self.assign_player_numbers()
         super(Game, self).__init__()
 
     def load_level(self):
@@ -110,10 +113,7 @@ class Game(threading.Thread):
                 return ent
         return None
 
-    def create_players(self, clients):
-        shuffle(self.player_map)
-        self.entities = [Pacman(), Ghost(GhostColor.RED), Ghost(GhostColor.BLUE),
-                         Ghost(GhostColor.ORANGE), Ghost(GhostColor.PINK)]
+    def assign_player_numbers(self):
         for i, client in enumerate(self.clients):
             if client.active:
                 msg = {'label': "playerNumber", 'data': i}
