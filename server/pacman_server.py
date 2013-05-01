@@ -261,7 +261,7 @@ class Game(threading.Thread):
                 ent.position = ent.round_position()
 
     def check_portal(self, ent):
-        ds = [[-1, 0], [0, -1], [1, 0], [0, 1]][ent.facing - 1]
+        ds = [(-1, 0), (0, -1), (1, 0), (0, 1)][ent.facing - 1]
         x, y = ent.round_position()
         if (x, y) in self.portals:
             dx = x - ent.position[0]
@@ -271,18 +271,18 @@ class Game(threading.Thread):
                 self.send_update = True
 
     def can_go(self, ent, direction):
-        dx = [[-1, 0], [0, -1], [1, 0], [0, 1]][direction - 1]
-        x, y = ent.round_position(dx[0], dx[1])
+        ds = [(-1, 0), (0, -1), (1, 0), (0, 1)][direction - 1]
+        x, y = ent.round_position(*ds)
         try:
             c = self.cells[y][x]
         except IndexError, e:
             # The entity is trying to move off of the map.
             return False
-        free_move = [' ', 'o', 'O', 's', '1', '@']
-        return c in free_move or c.isdigit() or \
-            (c == '|' and not ent.is_pacman and \
-            ((ent.mode == GhostMode.DEAD and direction == Direction.DOWN) or \
-             (ent.mode == GhostMode.NORMAL and direction == Direction.UP)))
+        free_move = {' ', 'o', 'O', 's', '@'}
+        return (c in free_move or c.isdigit() or
+                (c == '|' and not ent.is_pacman and
+                 ((ent.mode == GhostMode.DEAD and direction == Direction.DOWN) or
+                  (ent.mode == GhostMode.NORMAL and direction == Direction.UP))))
 
     def move(self, ent, direction):
         speed = ent.speed
