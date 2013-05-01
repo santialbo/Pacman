@@ -234,31 +234,25 @@ class Game(threading.Thread):
     def update_ent(self, ent):
         dirs = ["", "left", "up", "right", "down"]
         self.check_portal(ent)
-        for i in range(1, 5):
+        valid_directions = set([i for i in range(1,5) if self.can_go(ent, i)])
+        for i in valid_directions:
             if ent.key_state[dirs[i]]:
                 x, y = ent.round_position()
-                if self.cells[y][x] == 's' or self.cells[y][x].isdigit():
-                    # can't go back when accessing portal
-                    continue
+                # The ghost is trying to go backwards. Allow only
+                # if there are no other valid directions.
                 if not ent.is_pacman and ent.mode == GhostMode.NORMAL \
-                    and (i - ent.facing + 4) % 4 == 2:
-                    # A normal ghost is trying to go backwards, but
-                    # ghosts can't go backwards unless it's the only way
-                    # or they are dead.
-                    forwards = i - 2 if i > 2 else i + 2
-                    left = forwards - 1 if forwards > 1 else 4
-                    right = forwards + 1 if forwards < 4 else 1
-                    if (self.can_go(ent, forwards) or
-                        self.can_go(ent, left) or
-                        self.can_go(ent, right)):
-                        continue
-                if self.can_go(ent, i):
-                    if ent.facing != i:
-                        self.send_update = True
+                    and (i - ent.facing + 4) % 4 == 2 \
+                    and len(valid_directions - {i}):
+                    continue
+                # Can't go back when accessing portal
+                if self.cells[y][x] == 's' or self.cells[y][x].isdigit():
+                    continue
+                if ent.facing != i:
+                    self.send_update = True
                     ent.facing = i
-                    break
+                break
         if ent.facing > 0:
-            if self.can_go(ent, ent.facing):
+            if ent.facing in valid_directions:
                 self.move(ent, ent.facing)
             else:
                 if ent.moving:
@@ -279,7 +273,11 @@ class Game(threading.Thread):
     def can_go(self, ent, direction):
         dx = [[-1, 0], [0, -1], [1, 0], [0, 1]][direction - 1]
         x, y = ent.round_position(dx[0], dx[1])
-        c = self.cells[y][x]
+        try:
+            c = self.cells[y][x]
+        except IndexError, e:
+            # The entity is trying to move off of the map.
+            return False
         free_move = [' ', 'o', 'O', 's', '1', '@']
         return c in free_move or c.isdigit() or \
             (c == '|' and not ent.is_pacman and \
