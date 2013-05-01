@@ -260,8 +260,11 @@ class Game(threading.Thread):
                     ent.moving = False
                 ent.position = ent.round_position()
 
+    def change_in_direction(self, direction):
+        return [(-1, 0), (0, -1), (1, 0), (0, 1)][direction - 1]
+
     def check_portal(self, ent):
-        ds = [(-1, 0), (0, -1), (1, 0), (0, 1)][ent.facing - 1]
+        ds = self.change_in_direction(ent.facing)
         x, y = ent.round_position()
         if (x, y) in self.portals:
             dx = x - ent.position[0]
@@ -271,7 +274,7 @@ class Game(threading.Thread):
                 self.send_update = True
 
     def can_go(self, ent, direction):
-        ds = [(-1, 0), (0, -1), (1, 0), (0, 1)][direction - 1]
+        ds = self.change_in_direction(direction)
         x, y = ent.round_position(*ds)
         try:
             c = self.cells[y][x]
@@ -296,17 +299,14 @@ class Game(threading.Thread):
             else:
                 speed *= 2
         else:
-            if self.last_pill_eaten:
-                if time.time() - self.last_pill_eaten < 0.2:
-                    speed *= 0.8
-        dx = [[-1, 0], [0, -1], [1, 0], [0, 1]][direction - 1]
-        if dx[0] == 0:
-            x = round(ent.position[0])
-            y = ent.position[1] + dx[1]*speed*self.dt
-        else:
-            x = ent.position[0] + dx[0]*speed*self.dt
-            y = round(ent.position[1])
-        ent.position = (x, y)
+            if self.last_pill_eaten and time.time() - self.last_pill_eaten < 0.2:
+                speed *= 0.8
+        dx, dy = self.change_in_direction(direction)
+        x = ent.position[0] + dx*speed*self.dt
+        y = ent.position[1] + dy*speed*self.dt
+        # Round off the direction we're not moving in so that Pacman
+        # stays in the middle of the track.
+        ent.position = (round(x), y) if dx == 0 else (x, round(y))
         ent.moving = True
 
     def check_pacman(self):
