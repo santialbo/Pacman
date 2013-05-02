@@ -190,9 +190,6 @@ class Game(threading.Thread):
         self.publish("go")
         ticks_since_last_update = 0
         while self.running:
-            # calculate computation time
-            itime = time.time()
-
             # check for pause
             if self.pause_time > 0:
                 time.sleep(self.pause_time)
@@ -200,6 +197,9 @@ class Game(threading.Thread):
                 if self.death:
                     self.lives -= 1
                     break # to start again
+
+            # calculate computation time
+            itime = time.time()
 
             # finish if all players are disconected
             if self.all_offline():
