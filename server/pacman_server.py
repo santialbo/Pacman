@@ -189,28 +189,37 @@ class Game(threading.Thread):
         self.publish("go")
         ticks_since_last_update = 0
         while self.running:
+            # calculate computation time
+            itime = time.time()
+
+            # check for pause
             if self.pause_time > 0:
                 time.sleep(self.pause_time)
                 self.pause_time = 0
                 if self.death:
                     self.lives -= 1
                     break # to start again
-            itime = time.time()
+
             # finish if all players are disconected
             if self.all_offline():
                 self.running = False
                 break
+
             # update and send updated game state if necessary
             self.update()
+
+            # send game state if  necessary
             ticks_since_last_update += 1
             if self.send_update or ticks_since_last_update > 10:
                 self.send_update = False
                 ticks_since_last_update = 0
                 self.send_game_state()
+
             # sleep remaining time
             time.sleep(itime + self.dt - time.time())
 
         if self.lives == 0:
+            # hax until winning condition is added
             self.lives == 3
 
         if self.running:
@@ -296,7 +305,7 @@ class Game(threading.Thread):
                     speed *= 0.6
             elif ent.mode == GhostMode.VULNERABLE:
                 speed *= 0.8
-            else:
+            else: # ent.mode == GhostMode.DEAD
                 speed *= 2
         else:
             if self.last_pill_eaten and time.time() - self.last_pill_eaten < 0.2:
@@ -347,6 +356,7 @@ class Game(threading.Thread):
             pp, gp = self.entities[0].position, ghost.position
             if abs(gp[0] - pp[0]) + abs(gp[1] - pp[1]) < 1.0:
                 if ghost.mode == GhostMode.VULNERABLE:
+                    # pacman eats ghost
                     ghost.mode = GhostMode.DEAD
                     ghost.just_eaten = True
                     self.pause_time = 1
@@ -354,6 +364,7 @@ class Game(threading.Thread):
                     self.score[self.player_map[0]] += self.bonus
                     self.send_update = True
                 elif ghost.mode == GhostMode.NORMAL:
+                    # ghost eats pacman
                     self.death = True
                     self.pause_time = 2
                     self.send_update = True
