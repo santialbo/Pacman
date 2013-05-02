@@ -1,7 +1,7 @@
 Pacman
 ======
 
-A multiplayer version of the classic arcade
+A multiplayer version of the classic arcade. Try it online [here](http://ec2-54-244-207-36.us-west-2.compute.amazonaws.com/) (beware of the lag).
 
 ![Screenshot](https://raw.github.com/santialbo/Pacman/master/screenshots/screenshot000.png)
 ![Screenshot](https://raw.github.com/santialbo/Pacman/master/screenshots/screenshot002.png)
