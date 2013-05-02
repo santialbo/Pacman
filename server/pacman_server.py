@@ -2,6 +2,7 @@ from tornado import httpserver, websocket, ioloop, web
 from uuid import uuid1
 from random import shuffle
 from collections import defaultdict
+from copy import copy, deepcopy
 import json
 import threading, time
 import os
@@ -141,7 +142,7 @@ class Game(threading.Thread):
                 client.write_message(json.dumps(msg))
 
     def initialize_level(self, level):
-        self.cells = level["map"]["cells"]
+        self.cells = deepcopy(level["map"]["cells"])
         self.portals = level["map"]["portals"]
         self.death = False
         pacman, ghosts = self.entities[0], self.entities[1:]
@@ -181,11 +182,11 @@ class Game(threading.Thread):
         self.initialize_level(LEVELS[self.level])
         self.assign_clients()
         self.send_identity()
-        time.sleep(1) # give time before starting
+        time.sleep(1.0) # give time before starting
         self.publish("ready")
         self.running = True
         self.send_game_state()
-        time.sleep(2) # give time before starting
+        time.sleep(2.0) # give time before starting
         self.publish("go")
         ticks_since_last_update = 0
         while self.running:
