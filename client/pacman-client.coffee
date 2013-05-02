@@ -103,7 +103,7 @@ class Game
     @canvas.height = @gw.height*@gw.scale
     @canvas.width = @gw.width*@gw.scale
     @loadLevel()
-    
+
   loadLevel: () ->
     $.get 'res/level', (data) =>
       @cells = (data.split "\n").map (row) -> row.split ""
@@ -265,10 +265,10 @@ class Game
       @refTime = new Date().getTime()
     else if msg.label == "gameState"
       @cells = msg.data["level"]
-      things = ["players", "score", "lives", "pillTime", "pause", "bonus", "death"]
       if not @state.death and msg.data.death
         @refTime = new Date().getTime()
         @animationsPool["death"] = @animations.get "death"
+      things = ["players", "score", "lives", "pillTime", "pause", "bonus", "death"]
       for thing in things
         @state[thing] = msg.data[thing]
       @state.timestamp = new Date().getTime()
@@ -299,6 +299,7 @@ class Game
     @drawGhosts ctx
     @drawMask ctx
     @drawHUD ctx
+    #console.log @canvas.toDataURL()
 
   pacman: () ->
     (@state.players.filter (player) -> player.pacman)[0]
@@ -311,7 +312,6 @@ class Game
 
   drawPacman: (ctx) ->
     d = ["left", "left", "up", "right", "down"]
-    c = ["red", "blue", "orange", "pink"]
     pacman = @pacman()
     if @state.death
       if @time() < 1000
@@ -331,14 +331,14 @@ class Game
   drawGhosts: (ctx) ->
     if @state.death and @time() > 1000
       return
-    d = ["left", "left", "up", "right", "down"]
-    c = ["red", "blue", "orange", "pink"]
     first = true
     for ghost in @ghosts()
+      dir = ["left", "left", "up", "right", "down"][ghost.facing]
+      color = ["red", "blue", "orange", "pink"][ghost.color]
       if @state.pause and ghost.justEaten then continue
       if ghost.active
         if ghost.mode == 0 # NORMAL  
-          name = "ghost_" + c[ghost.color] + "_" + d[ghost.facing]
+          name = "ghost_" + color + "_" + dir
           s = @animationsPool[name].requestSprite()
         else if ghost.mode == 1 # VULNERABLE
           a = "ghost_dead_blue"
@@ -349,38 +349,44 @@ class Game
           else
             s = @animationsPool[a].peekSprite()
         else if ghost.mode == 2 # DEAD
-          s = @sprites.get("eyes_" + d[ghost.facing])
+          s = @sprites.get("eyes_" + dir)
         @drawSpriteInPosition ctx, s, ghost.position[0], ghost.position[1]
       else
+        @drawGhostsSpawn ghost, ctx
 
-        [a, b] = [500, 0.5]
-        # YEAH MR. WHITE, SCIENCE!
-        sign = (x) -> if x >= 0 then 1 else -1
-        [x0, dx] = [15.5, 1.9]
-        t = if @state.running then @time() else 0
-        t += (ghost.color - 1)/2*a + a*1.25
-        if ghost.inactiveTime > 1000
-          x = x0 + (ghost.color - 2)*dx
-          y = 14 + b*(2*Math.abs(2*(t/a - Math.floor(t/a + 0.5))) - 1)
-          dir = ["up", "down"][Math.round((sign((t - a/2) % a - a/2))/2 + 0.5)]
-        else if ghost.inactiveTime > 500
-          x = x0 + (ghost.color - 2)*dx*(Math.max(ghost.inactiveTime - 500, 0)/500)
-          y = 14
-          dir = ["right", "left"][Math.round(sign(ghost.color - 2)/2 + 0.5)]
-        else
-          x = x0
-          y = 11 + (ghost.inactiveTime/500)*3*(ghost.inactiveTime > 0)
-          dir = "up"
-        s = @animationsPool["ghost_" + c[ghost.color] + "_" + dir].requestSprite()
-        @drawSpriteInPosition ctx, s, x, y
+  drawGhostsSpawn: (ghost, ctx) ->
+    # This shitty piece of code does a lot of math to make the ghosts move
+    # up and down and get out of the spawn zone when they are dead.
+    color = ["red", "blue", "orange", "pink"][ghost.color]
+    [a, b] = [500, 0.5]
+    sign = (x) -> if x >= 0 then 1 else -1
+    [x0, dx] = [15.5, 1.9]
+    t = if @state.running then @time() else 0
+    t += (ghost.color - 1)/2*a + a*1.25
+    if ghost.inactiveTime > 1000
+      x = x0 + (ghost.color - 2)*dx
+      y = 14 + b*(2*Math.abs(2*(t/a - Math.floor(t/a + 0.5))) - 1)
+      dir = ["up", "down"][Math.round((sign((t - a/2) % a - a/2))/2 + 0.5)]
+    else if ghost.inactiveTime > 500
+      x = x0 + (ghost.color - 2)*dx*(Math.max(ghost.inactiveTime - 500, 0)/500)
+      y = 14
+      dir = ["right", "left"][Math.round(sign(ghost.color - 2)/2 + 0.5)]
+    else
+      x = x0
+      y = 11 + (ghost.inactiveTime/500)*3*(ghost.inactiveTime > 0)
+      dir = "up"
+    s = @animationsPool["ghost_" + color + "_" + dir].requestSprite()
+    @drawSpriteInPosition ctx, s, x, y
 
   coordinateFromPosition: (x, y) ->
+    # Return the coordinate position from the given position in the maze.
     [l, t, r, b] = [12, 12, 221, 244] # manually calibrated
     x = Math.round(4 + ( l+ (r - l)*(x - 3)/(@gw.cols - 6)))
     y = Math.round(26 + (t + (b - t)*(y - 1)/(@gw.rows - 2)))
     return [x, y]
 
   drawSpriteInPosition: (ctx, s, x, y) ->
+    # Draws the given sprite centered in the given position in the maze.
     [x, y] = @coordinateFromPosition x, y
     s.draw ctx, x - Math.round(s.width()/2), y - Math.round(s.height()/2)
       
@@ -477,8 +483,5 @@ gameWindowInfo = {
   'rows': 31,
   'cols': 32,
   }
-ip = null
-while ip == null
-  ip = window.prompt("Please, specify server ip.", "localhost:8888");
-server = "ws://" + ip + "/pacman"
+server = "ws://" + window.location.hostname + ":8888/pacman"
 game = new Game(canvas, gameWindowInfo, server)
